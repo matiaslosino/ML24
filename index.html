@@ -717,7 +717,17 @@ function deleteItem(id) {
   render();
 }
 
-function updateSearch(val) { searchQ = val; render(); }
+function updateSearch(val) {
+  searchQ = val;
+  render();
+  // Devolver foco al buscador y mantener cursor al final
+  const input = document.querySelector('.search-wrap input');
+  if (input) {
+    input.focus();
+    const len = input.value.length;
+    input.setSelectionRange(len, len);
+  }
+}
 
 // ─── MIS PEDIDOS ──────────────────────────────────────────────────────────────
 function openMyOrders() {
