@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML24 · Lista de Espera</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #E8A0B0;
+    --pink-light: #F5CDD6;
+    --pink-dark: #C4607A;
+    --cream: #FDF8F9;
+    --dark: #1A1018;
+    --mid: #3D2530;
+    --soft: #8C6672;
+    --border: rgba(232,160,176,0.3);
+    --card: rgba(255,250,251,0.95);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(232,160,176,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(196,96,122,0.07) 0%, transparent 50%);
+  }
+
+  /* HEADER */
+  header {
+    background: var(--dark);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--pink-light);
+    letter-spacing: 0.15em;
+    font-style: italic;
+  }
+  .logo span {
+    display: block;
+    font-size: 0.55rem;
+    font-family: 'Jost', sans-serif;
+    font-style: normal;
+    letter-spacing: 0.4em;
+    color: var(--pink);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .vendor-tag {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--pink);
+    background: rgba(232,160,176,0.15);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .vendor-tag:hover { background: rgba(232,160,176,0.25); }
+  .admin-btn {
+    font-size: 0.65rem;
+    color: var(--soft);
+    background: transparent;
+    border: 1px solid rgba(232,160,176,0.15);
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .admin-btn:hover { border-color: var(--border); color: var(--pink); }
+
+  /* TABS */
+  .tabs { display: flex; background: var(--dark); border-top: 1px solid rgba(232,160,176,0.2); }
+  .tab {
+    flex: 1; padding: 12px; text-align: center;
+    font-size: 0.62rem; letter-spacing: 0.2em;
+    color: rgba(232,160,176,0.7); cursor: pointer; transition: all 0.2s;
+    text-transform: uppercase; border-bottom: 2px solid transparent;
+    font-weight: 500;
+  }
+  .tab.active { color: var(--pink-light); border-bottom-color: var(--pink); font-weight: 600; }
+
+  /* MAIN */
+  main { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem; font-weight: 400; color: var(--dark); margin-bottom: 4px;
+  }
+  .section-sub {
+    font-size: 0.7rem; letter-spacing: 0.2em;
+    color: var(--mid); text-transform: uppercase; margin-bottom: 20px; font-weight: 500;
+  }
+
+  /* CARDS & FIELDS */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; margin-bottom: 16px;
+    box-shadow: 0 2px 16px rgba(232,160,176,0.08);
+  }
+  .field { margin-bottom: 14px; }
+  label {
+    display: block; font-size: 0.7rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--mid); margin-bottom: 6px;
+    font-weight: 600;
+  }
+  input, textarea, select {
+    width: 100%; background: #fff;
+    border: 1.5px solid rgba(196,96,122,0.4); border-radius: 8px;
+    padding: 10px 14px; font-family: 'Jost', sans-serif;
+    font-size: 0.95rem; color: var(--dark); outline: none; transition: border-color 0.2s;
+    font-weight: 500;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--pink-dark); background: #fff;
+    box-shadow: 0 0 0 3px rgba(196,96,122,0.1);
+  }
+  input::placeholder { color: rgba(61,37,48,0.35); font-weight: 400; }
+
+  .btn {
+    width: 100%; padding: 13px; background: var(--dark);
+    color: var(--pink-light); border: 1px solid var(--pink-dark);
+    border-radius: 8px; font-family: 'Jost', sans-serif;
+    font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; margin-top: 4px;
+  }
+  .btn:hover { background: var(--pink-dark); color: var(--cream); }
+  .btn.ghost {
+    background: transparent; color: var(--soft);
+    border-color: var(--border); margin-top: 8px;
+  }
+  .btn.danger { background: transparent; color: #c0392b; border-color: rgba(192,57,43,0.3); }
+  .btn.danger:hover { background: rgba(192,57,43,0.08); }
+  .btn.success { background: #1a8a40; border-color: #1a8a40; color: white; }
+  .btn.success:hover { background: #146b32; }
+
+  /* LIST ITEMS */
+  .wait-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 1px 8px rgba(232,160,176,0.06);
+    transition: all 0.3s; animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .wait-item.arrived { border-color: rgba(37,211,102,0.25); }
+  .item-product {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem; font-weight: 600; color: var(--dark); margin-bottom: 6px;
+  }
+  .item-client { font-size: 0.85rem; color: var(--dark); margin-bottom: 4px; font-weight: 500; }
+  .item-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .meta-chip {
+    font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--mid); background: rgba(61,37,48,0.08); padding: 4px 10px; border-radius: 20px;
+    font-weight: 500;
+  }
+  .meta-chip.pink { color: var(--pink-dark); background: rgba(232,160,176,0.18); font-weight: 600; }
+  .item-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-sm {
+    flex: 1; padding: 8px; border-radius: 6px; font-family: 'Jost', sans-serif;
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; border: 1px solid;
+  }
+  .btn-arrived { background: var(--dark); color: var(--pink); border-color: var(--pink-dark); }
+  .btn-arrived:hover { background: var(--pink-dark); color: var(--cream); }
+  .btn-whatsapp {
+    background: transparent; color: #25D366; border-color: rgba(37,211,102,0.3);
+    text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .btn-whatsapp:hover { background: rgba(37,211,102,0.08); }
+  .btn-delete { background: transparent; color: #c0392b; border-color: rgba(192,57,43,0.2); max-width: 40px; }
+  .btn-delete:hover { background: rgba(192,57,43,0.08); }
+
+  /* BADGE */
+  .badge {
+    display: inline-block; background: var(--pink); color: var(--dark);
+    font-size: 0.6rem; font-weight: 500; padding: 2px 7px; border-radius: 10px;
+    margin-left: 6px; vertical-align: middle;
+  }
+
+  .arrived-badge {
+    display: inline-block; background: rgba(37,211,102,0.15); color: #1a8a40;
+    font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(37,211,102,0.3);
+  }
+  .pending-badge {
+    display: inline-block; background: rgba(255,165,0,0.15); color: #b8720a;
+    font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(255,165,0,0.3);
+  }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--soft); font-size: 0.85rem; }
+
+  /* PRODUCTOS DINÁMICOS */
+  .product-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
+  .product-row .field { flex: 1; margin-bottom: 0; }
+  .btn-remove-product {
+    flex-shrink: 0; width: 36px; height: 40px; border-radius: 8px;
+    background: transparent; border: 1px solid rgba(192,57,43,0.25);
+    color: #c0392b; font-size: 1rem; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-remove-product:hover { background: rgba(192,57,43,0.08); }
+  .btn-add-product {
+    width: 100%; padding: 9px; background: transparent;
+    border: 1px dashed var(--border); border-radius: 8px;
+    color: var(--soft); font-family: 'Jost', sans-serif;
+    font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 14px;
+  }
+  .btn-add-product:hover { border-color: var(--pink); color: var(--pink-dark); background: rgba(232,160,176,0.05); }
+  .empty-icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
+
+  /* OVERLAY / MODAL */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,16,24,0.8); backdrop-filter: blur(4px);
+    z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--cream); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; margin-bottom: 4px; }
+  .modal-sub { font-size: 0.7rem; letter-spacing: 0.2em; color: var(--soft); text-transform: uppercase; margin-bottom: 20px; }
+
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-wrap input { padding-left: 36px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--soft); font-size: 0.9rem; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* SCREEN LOCK */
+  #lockScreen {
+    position: fixed; inset: 0; background: var(--dark);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 999; padding: 30px;
+    background-image: radial-gradient(ellipse at 50% 30%, rgba(232,160,176,0.1) 0%, transparent 60%);
+  }
+  .lock-logo {
+    font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 300;
+    color: var(--pink-light); letter-spacing: 0.2em; font-style: italic; margin-bottom: 6px;
+  }
+  .lock-sub {
+    font-size: 0.6rem; letter-spacing: 0.5em; color: var(--pink);
+    text-transform: uppercase; margin-bottom: 48px;
+  }
+  .lock-card {
+    background: rgba(255,250,251,0.05); border: 1px solid rgba(232,160,176,0.2);
+    border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 340px;
+  }
+  .lock-title {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 300;
+    color: var(--pink-light); margin-bottom: 4px;
+  }
+  .lock-sub2 { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--soft); text-transform: uppercase; margin-bottom: 20px; }
+  .lock-card input {
+    background: rgba(255,255,255,0.06); border-color: rgba(232,160,176,0.2);
+    color: var(--pink-light);
+  }
+  .lock-card input::placeholder { color: rgba(232,160,176,0.3); }
+  .lock-card input:focus { border-color: var(--pink); background: rgba(232,160,176,0.08); }
+  .lock-btn {
+    width: 100%; padding: 13px; background: var(--pink-dark); color: white;
+    border: none; border-radius: 8px; font-family: 'Jost', sans-serif;
+    font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; margin-top: 12px;
+  }
+  .lock-btn:hover { background: #a84d65; }
+  .lock-error {
+    color: #ff8080; font-size: 0.75rem; text-align: center;
+    margin-top: 10px; min-height: 20px; letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-logo">ML24</div>
+  <div class="lock-sub">Lista de Espera · Vendedores</div>
+  <div class="lock-card">
+    <div class="lock-title">Identificate</div>
+    <div class="lock-sub2">Ingresá tu nombre y apellido</div>
+    <div class="field">
+      <label style="color:var(--soft)">Nombre</label>
+      <input type="text" id="lockFirstName" placeholder="Ej: María" onkeydown="if(event.key==='Enter')document.getElementById('lockLastName').focus()" />
+    </div>
+    <div class="field">
+      <label style="color:var(--soft)">Apellido</label>
+      <input type="text" id="lockLastName" placeholder="Ej: González" onkeydown="if(event.key==='Enter')tryLogin()" />
+    </div>
+    <div class="lock-error" id="lockError"></div>
+    <button class="lock-btn" id="loginBtn">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<header>
+  <div class="logo">
+    ML24
+    <span>Lista de Espera</span>
+  </div>
+  <div class="header-right">
+    <div class="admin-btn" onclick="openMyOrders()">📋 Mis pedidos</div>
+    <div class="vendor-tag" onclick="logout()">👤 <span id="vendorNameTag">—</span> · Salir</div>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('nueva')" id="tab-nueva">➕ Nueva</div>
+  <div class="tab" onclick="switchTab('lista')" id="tab-lista">📋 Lista <span id="pendingBadge"></span></div>
+  <div class="tab" onclick="switchTab('llegaron')" id="tab-llegaron">✅ Llegaron</div>
+</div>
+<main id="mainContent"></main>
+
+<!-- MIS PEDIDOS MODAL -->
+<div class="overlay" id="myOrdersOverlay">
+  <div class="modal" style="max-width:480px;max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-shrink:0">
+      <div class="modal-title">📋 Mis Pedidos</div>
+      <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeMyOrders()">✕ Cerrar</div>
+    </div>
+    <div class="modal-sub" id="myOrdersSub"></div>
+    <div id="myOrdersContent" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ─── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyA2rTfHEyRfvXoyiwxYJDvXRQUzrGCf4XA",
+  authDomain: "ml24-lista-de-espera.firebaseapp.com",
+  databaseURL: "https://ml24-lista-de-espera-default-rtdb.firebaseio.com",
+  projectId: "ml24-lista-de-espera",
+  storageBucket: "ml24-lista-de-espera.firebasestorage.app",
+  messagingSenderId: "156382259188",
+  appId: "1:156382259188:web:f54d0a7c3edbf96d94fba1"
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentTab = 'nueva';
+let currentVendor = '';
+let searchQ = '';
+let itemsCache = [];
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+function loadItems() { return itemsCache; }
+
+function saveItems(items) {
+  itemsCache = items;
+  set(ref(db, 'ml24-waitlist'), items);
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function tryLogin() {
+  const first = document.getElementById('lockFirstName').value.trim();
+  const last = document.getElementById('lockLastName').value.trim();
+  if (!first || !last) {
+    document.getElementById('lockError').textContent = 'Ingresá nombre y apellido.';
+    return;
+  }
+  const fullName = first + ' ' + last;
+  currentVendor = fullName;
+  localStorage.setItem('ml24vendor', fullName);
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('vendorNameTag').textContent = fullName;
+  render();
+}
+
+function logout() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  currentVendor = '';
+  localStorage.removeItem('ml24vendor');
+  document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('lockFirstName').value = '';
+  document.getElementById('lockLastName').value = '';
+  document.getElementById('lockError').textContent = '';
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  render();
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  const items = loadItems();
+  const main = document.getElementById('mainContent');
+  const pending = items.filter(i => !i.arrived).length;
+  document.getElementById('pendingBadge').innerHTML = pending > 0 ? `<span class="badge">${pending}</span>` : '';
+
+  if (currentTab === 'nueva') main.innerHTML = renderNuevaTab();
+  else if (currentTab === 'lista') main.innerHTML = renderListaTab(items.filter(i => !i.arrived));
+  else main.innerHTML = renderLlegaronTab(items.filter(i => i.arrived));
+}
+
+function renderNuevaTab() {
+  return `
+    <div class="section-title">Nuevo Pedido</div>
+    <div class="section-sub">Registrar cliente en lista de espera</div>
+    <div class="card">
+      <div class="field" id="products-block">
+        <label>Producto(s)</label>
+        <div id="product-list">
+          <div class="product-row" id="product-row-0">
+            <div class="field">
+              <select id="f-brand-0">
+                <option value="">— Marca —</option>
+                <option>Abercrombie &amp; Fitch</option>
+          <option>Adolfo Dominguez</option>
+          <option>Aerin</option>
+          <option>Anua</option>
+          <option>Armani</option>
+          <option>Atkinsons</option>
+          <option>Azzaro</option>
+          <option>Banderas</option>
+          <option>Bensimon</option>
+          <option>Bogart</option>
+          <option>Brown Bee</option>
+          <option>Brunello Cucinelli</option>
+          <option>Burberry</option>
+          <option>CHANEL</option>
+          <option>Cacharel</option>
+          <option>Calvin Klein</option>
+          <option>Carolina Herrera</option>
+          <option>Cartier</option>
+          <option>Celimax</option>
+          <option>Cher</option>
+          <option>Clarins</option>
+          <option>Clean Beauty Collective</option>
+          <option>Clinique</option>
+          <option>Coach</option>
+          <option>Cosrx</option>
+          <option>Creed</option>
+          <option>Davidoff</option>
+          <option>Diesel</option>
+          <option>Dior</option>
+          <option>Dolce&amp;Gabbana</option>
+          <option>DKNY</option>
+          <option>Drunk Elephant</option>
+          <option>Dsquared</option>
+          <option>Estée Lauder</option>
+          <option>Ferragamo</option>
+          <option>Filorga</option>
+          <option>Ga.ma Italy</option>
+          <option>Givenchy</option>
+          <option>Gucci</option>
+          <option>Guerlain</option>
+          <option>Guess</option>
+          <option>Haan</option>
+          <option>Hair Rituel</option>
+          <option>Halloween</option>
+          <option>Hamidi</option>
+          <option>Hermès</option>
+          <option>Hollister</option>
+          <option>Hugo Boss</option>
+          <option>Iconic London</option>
+          <option>Issey Miyake</option>
+          <option>Jean Paul Gaultier</option>
+          <option>Jimmy Choo</option>
+          <option>Joico</option>
+          <option>Jo Malone</option>
+          <option>Juliette Has A Gun</option>
+          <option>Kenzo</option>
+          <option>Kerastase</option>
+          <option>Kylie Jenner</option>
+          <option>La Mer</option>
+          <option>La Prairie</option>
+          <option>Lancome</option>
+          <option>Lattafa</option>
+          <option>Lendava</option>
+          <option>Lolita Lempicka</option>
+          <option>MAC</option>
+          <option>Marc Jacobs</option>
+          <option>Marchand D'Aromes</option>
+          <option>Mavala</option>
+          <option>Medicube</option>
+          <option>Memo</option>
+          <option>Messi</option>
+          <option>Michael Kors</option>
+          <option>Missoni</option>
+          <option>Mixsoon</option>
+          <option>Montblanc</option>
+          <option>Moschino</option>
+          <option>Mugler</option>
+          <option>Naj Oleari</option>
+          <option>Narciso Rodriguez</option>
+          <option>Nina Ricci</option>
+          <option>Off White</option>
+          <option>Orlane</option>
+          <option>Oscar de la Renta</option>
+          <option>Parfums de Marly</option>
+          <option>Pupa</option>
+          <option>Rabanne</option>
+          <option>Ralph Lauren</option>
+          <option>Rouge Collection</option>
+          <option>Sarkany</option>
+          <option>Shiseido</option>
+          <option>Skin1004</option>
+          <option>Sisley</option>
+          <option>Tangle Teezer</option>
+          <option>Ted Lapidus</option>
+          <option>The Glow Factor</option>
+          <option>Tom Ford</option>
+          <option>Tommy Hilfiger</option>
+          <option>Tory Burch</option>
+          <option>Tucci</option>
+          <option>Valentino</option>
+          <option>Versace</option>
+          <option>Victorinox</option>
+          <option>Viktor &amp; Rolf</option>
+          <option>VT Cosmetics</option>
+          <option>Yves Saint Laurent</option>
+          <option>Zadig&amp;Voltaire</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1.5">
+              <input type="text" id="f-product-0" placeholder="Ej: N°5 EDP 100ml" />
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-add-product" onclick="addProductRow()">+ Agregar otro producto</button>
+      </div>
+      <div class="field"><label>Nombre</label><input type="text" id="f-name" placeholder="Ej: Laura" /></div>
+      <div class="field"><label>Apellido</label><input type="text" id="f-lastname" placeholder="Ej: Martínez" /></div>
+      <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="f-phone" placeholder="Ej: 1154321234" /></div>
+      <div class="field"><label>Mail</label><input type="email" id="f-email" placeholder="Ej: laura@gmail.com" /></div>
+      <div class="field"><label>DNI</label><input type="text" id="f-dni" placeholder="Ej: 30123456" /></div>
+      <div class="field"><label>Notas (opcional)</label><input type="text" id="f-notes" placeholder="Ej: Quiere el tamaño grande, regalo" /></div>
+      <button class="btn" onclick="addItem()">Agregar a lista de espera</button>
+    </div>`;
+}
+
+function renderListaTab(items) {
+  let filtered = items;
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    filtered = items.filter(i => {
+      const prods = i.products || [{ brand: i.brand||'', product: i.product||'' }];
+      const prodStr = prods.map(p => `${p.brand} ${p.product}`).join(' ').toLowerCase();
+      return prodStr.includes(q) || i.name.toLowerCase().includes(q) ||
+        (i.lastname||'').toLowerCase().includes(q) || i.phone.includes(q) ||
+        (i.email||'').toLowerCase().includes(q) || (i.dni||'').includes(q);
+    });
+  }
+  let html = `
+    <div class="section-title">En Espera <span class="badge">${items.length}</span></div>
+    <div class="section-sub">Clientes pendientes de aviso</div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Buscar por producto, cliente, DNI..." value="${searchQ}" oninput="updateSearch(this.value)" />
+    </div>`;
+  if (filtered.length === 0) html += `<div class="empty"><div class="empty-icon">📋</div>No hay pedidos pendientes</div>`;
+  else filtered.sort((a,b) => b.ts - a.ts).forEach(item => { html += renderItem(item, false); });
+  return html;
+}
+
+function renderLlegaronTab(items) {
+  let html = `<div class="section-title">Llegaron</div><div class="section-sub">Avisar al cliente · productos disponibles</div>`;
+  if (items.length === 0) html += `<div class="empty"><div class="empty-icon">✨</div>Ningún producto marcado como llegado aún</div>`;
+  else items.sort((a,b) => b.arrivedTs - a.arrivedTs).forEach(item => { html += renderItem(item, true); });
+  return html;
+}
+
+function renderItem(item, arrived) {
+  const date = new Date(item.ts).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  const phone = (item.phone||'').replace(/\D/g,'');
+  const fullName = [item.name, item.lastname].filter(Boolean).join(' ');
+
+  // Compatibilidad: registros viejos tienen brand/product, nuevos tienen products[]
+  const products = item.products || [{ brand: item.brand || '', product: item.product || '' }];
+  const firstProduct = products[0]?.product || '';
+  const waMsg = encodeURIComponent(`Hola ${fullName}! Te avisamos que el/los producto(s) que reservaste ya llegaron: *${products.map(p=>[p.brand,p.product].filter(Boolean).join(' ')).join(', ')}*. ¡Pasá cuando quieras!`);
+  const waLink = `https://wa.me/549${phone}?text=${waMsg}`;
+
+  const productsHtml = products.map(p => `
+    <div class="item-product">
+      ${p.brand ? `<span style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--pink-dark);font-family:'Jost',sans-serif;display:block;margin-bottom:2px">${p.brand}</span>` : ''}
+      ${p.product}
+    </div>`).join('');
+
+  return `
+    <div class="wait-item ${arrived ? 'arrived' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="flex:1">${productsHtml}</div>
+        <div style="font-size:0.65rem;letter-spacing:0.1em;color:var(--soft);text-transform:uppercase;white-space:nowrap;margin-left:8px;margin-top:2px">👤 ${item.vendor}</div>
+      </div>
+      <div class="item-client"><span style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--soft)">Cliente: </span><strong>${fullName}</strong>${item.dni ? ' · DNI ' + item.dni : ''}</div>
+      <div class="item-meta">
+        <span class="meta-chip">📱 ${item.phone}</span>
+        ${item.email ? `<span class="meta-chip">✉️ ${item.email}</span>` : ''}
+        <span class="meta-chip">📅 Creado: ${date}</span>
+        ${arrived ? `<span class="arrived-badge">✅ Llegó</span>` : ''}
+      </div>
+      ${item.notes ? `<div style="font-size:0.8rem;color:var(--soft);margin-bottom:8px;font-style:italic;">"${item.notes}"</div>` : ''}
+      <div class="item-actions">
+        ${!arrived ? `<button class="btn-sm btn-arrived" onclick="markArrived('${item.id}')">Llegó ✓</button>` : `<button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border)" onclick="unmarkArrived('${item.id}')">↩ Cancelar llegada</button>`}
+        <a href="${waLink}" target="_blank" class="btn-sm btn-whatsapp">💬 WhatsApp</a>
+        <button class="btn-sm btn-delete" onclick="deleteItem('${item.id}')" title="Eliminar">🗑</button>
+      </div>
+    </div>`;
+}
+
+// ─── PRODUCTOS DINÁMICOS ──────────────────────────────────────────────────────
+const BRANDS = ["Abercrombie & Fitch","Adolfo Dominguez","Aerin","Anua","Armani","Atkinsons","Azzaro","Banderas","Bensimon","Bogart","Brown Bee","Brunello Cucinelli","Burberry","CHANEL","Cacharel","Calvin Klein","Carolina Herrera","Cartier","Celimax","Cher","Clarins","Clean Beauty Collective","Clinique","Coach","Cosrx","Creed","Davidoff","Diesel","Dior","Dolce&Gabbana","DKNY","Drunk Elephant","Dsquared","Estée Lauder","Ferragamo","Filorga","Ga.ma Italy","Givenchy","Gucci","Guerlain","Guess","Haan","Hair Rituel","Halloween","Hamidi","Hermès","Hollister","Hugo Boss","Iconic London","Issey Miyake","Jean Paul Gaultier","Jimmy Choo","Joico","Jo Malone","Juliette Has A Gun","Kenzo","Kerastase","Kylie Jenner","La Mer","La Prairie","Lancome","Lattafa","Lendava","Lolita Lempicka","MAC","Marc Jacobs","Marchand D'Aromes","Mavala","Medicube","Memo","Messi","Michael Kors","Missoni","Mixsoon","Montblanc","Moschino","Mugler","Naj Oleari","Narciso Rodriguez","Nina Ricci","Off White","Orlane","Oscar de la Renta","Parfums de Marly","Pupa","Rabanne","Ralph Lauren","Rouge Collection","Sarkany","Shiseido","Skin1004","Sisley","Tangle Teezer","Ted Lapidus","The Glow Factor","Tom Ford","Tommy Hilfiger","Tory Burch","Tucci","Valentino","Versace","Victorinox","Viktor & Rolf","VT Cosmetics","Yves Saint Laurent","Zadig&Voltaire"];
+
+let productRowCount = 1;
+
+function buildBrandOptions() {
+  return `<option value="">— Marca —</option>` + BRANDS.map(b => `<option>${b}</option>`).join('');
+}
+
+function addProductRow() {
+  const idx = productRowCount++;
+  const div = document.createElement('div');
+  div.className = 'product-row';
+  div.id = `product-row-${idx}`;
+  div.innerHTML = `
+    <div class="field">
+      <select id="f-brand-${idx}">${buildBrandOptions()}</select>
+    </div>
+    <div class="field" style="flex:1.5">
+      <input type="text" id="f-product-${idx}" placeholder="Ej: EDP 100ml" />
+    </div>
+    <button type="button" class="btn-remove-product" onclick="removeProductRow(${idx})" title="Quitar">✕</button>`;
+  document.getElementById('product-list').appendChild(div);
+}
+
+function removeProductRow(idx) {
+  const row = document.getElementById(`product-row-${idx}`);
+  if (row) row.remove();
+}
+
+function getProducts() {
+  const products = [];
+  document.querySelectorAll('#product-list .product-row').forEach(row => {
+    const idx = row.id.replace('product-row-', '');
+    const brand = (document.getElementById(`f-brand-${idx}`)?.value || '').trim();
+    const product = (document.getElementById(`f-product-${idx}`)?.value || '').trim();
+    if (brand || product) products.push({ brand, product });
+  });
+  return products;
+}
+
+function resetProductRows() {
+  productRowCount = 1;
+  document.getElementById('product-list').innerHTML = `
+    <div class="product-row" id="product-row-0">
+      <div class="field">
+        <select id="f-brand-0">${buildBrandOptions()}</select>
+      </div>
+      <div class="field" style="flex:1.5">
+        <input type="text" id="f-product-0" placeholder="Ej: N°5 EDP 100ml" />
+      </div>
+    </div>`;
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────────────────────────
+function addItem() {
+  const products = getProducts();
+  const validProducts = products.filter(p => p.product);
+  const name = document.getElementById('f-name').value.trim();
+  const lastname = document.getElementById('f-lastname').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const dni = document.getElementById('f-dni').value.trim();
+  const notes = document.getElementById('f-notes').value.trim();
+  if (validProducts.length === 0 || !name || !phone) { alert('Por favor completá al menos un producto, nombre y teléfono.'); return; }
+  const items = loadItems();
+  items.push({ id: Date.now().toString(), products: validProducts, name, lastname, phone, email, dni, notes, vendor: currentVendor, ts: Date.now(), arrived: false, arrivedTs: null });
+  saveItems(items);
+  resetProductRows();
+  ['f-name','f-lastname','f-phone','f-email','f-dni','f-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  switchTab('lista');
+}
+
+function markArrived(id) {
+  if (!confirm('¿Confirmar que el producto llegó?')) return;
+  const items = loadItems();
+  const item = items.find(i => i.id === id);
+  if (item) { item.arrived = true; item.arrivedTs = Date.now(); saveItems(items); render(); }
+}
+
+function unmarkArrived(id) {
+  const items = loadItems();
+  const item = items.find(i => i.id === id);
+  if (item) { item.arrived = false; item.arrivedTs = null; saveItems(items); render(); }
+}
+
+function deleteItem(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  const items = loadItems();
+  saveItems(items.filter(i => i.id !== id));
+  render();
+}
+
+function updateSearch(val) { searchQ = val; render(); }
+
+// ─── MIS PEDIDOS ──────────────────────────────────────────────────────────────
+function openMyOrders() {
+  const items = loadItems().filter(i => i.vendor === currentVendor);
+  const pending = items.filter(i => !i.arrived);
+  const arrived = items.filter(i => i.arrived);
+  document.getElementById('myOrdersSub').textContent = `${items.length} pedido(s) · ${pending.length} pendiente(s) · ${arrived.length} llegado(s)`;
+
+  let html = '';
+  if (items.length === 0) {
+    html = `<div class="empty"><div class="empty-icon">📋</div>No tenés pedidos cargados aún</div>`;
+  } else {
+    if (pending.length > 0) {
+      html += `<div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);margin-bottom:10px;font-weight:600">En espera (${pending.length})</div>`;
+      pending.sort((a,b) => b.ts - a.ts).forEach(item => {
+        html += renderMyOrderItem(item);
+      });
+    }
+    if (arrived.length > 0) {
+      html += `<div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);margin:16px 0 10px;font-weight:600">Llegaron (${arrived.length})</div>`;
+      arrived.sort((a,b) => b.arrivedTs - a.arrivedTs).forEach(item => {
+        html += renderMyOrderItem(item);
+      });
+    }
+  }
+  document.getElementById('myOrdersContent').innerHTML = html;
+  document.getElementById('myOrdersOverlay').classList.add('open');
+}
+
+function renderMyOrderItem(item) {
+  const date = new Date(item.ts).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  const fullName = [item.name, item.lastname].filter(Boolean).join(' ');
+  const products = item.products || [{ brand: item.brand||'', product: item.product||'' }];
+  const prodHtml = products.map(p =>
+    `<div style="font-size:1rem;color:var(--dark);font-weight:600;">
+      ${p.brand ? `<span style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--pink-dark);font-weight:700">${p.brand} · </span>` : ''}${p.product}
+    </div>`
+  ).join('');
+  return `
+    <div style="padding:12px 0;border-bottom:1.5px solid rgba(196,96,122,0.2)">
+      ${prodHtml}
+      <div style="font-size:0.85rem;color:var(--dark);margin-top:5px;font-weight:500">
+        <span style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);font-weight:600">Cliente: </span>
+        <strong>${fullName}</strong> · 📱 ${item.phone}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:5px;align-items:center">
+        <span style="font-size:0.68rem;color:var(--mid);font-weight:500">📅 Creado: ${date}</span>
+        ${item.arrived ? `<span class="arrived-badge">✅ Llegó</span>` : `<span class="pending-badge">⏳ Pendiente de ingreso</span>`}
+      </div>
+    </div>`;
+}
+
+function closeMyOrders() {
+  document.getElementById('myOrdersOverlay').classList.remove('open');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  document.getElementById('lockLastName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+  document.getElementById('lockFirstName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lockLastName').focus(); });
+
+  // Escuchar cambios en Firebase en tiempo real
+  onValue(ref(db, 'ml24-waitlist'), (snapshot) => {
+    itemsCache = snapshot.val() || [];
+    if (currentVendor) render();
+  });
+
+  const saved = localStorage.getItem('ml24vendor');
+  if (saved) {
+    currentVendor = saved;
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('vendorNameTag').textContent = saved;
+  } else {
+    document.getElementById('lockScreen').style.display = 'flex';
+  }
+});
+</script>
+</body>
+</html>
