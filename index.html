@@ -341,10 +341,9 @@
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
 // ─── FIREBASE CONFIG ──────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyA2rTfHEyRfvXoyiwxYJDvXRQUzrGCf4XA",
@@ -355,8 +354,8 @@ const firebaseConfig = {
   messagingSenderId: "156382259188",
   appId: "1:156382259188:web:f54d0a7c3edbf96d94fba1"
 };
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getDatabase(firebaseApp);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let currentTab = 'nueva';
@@ -369,7 +368,7 @@ function loadItems() { return itemsCache; }
 
 function saveItems(items) {
   itemsCache = items;
-  set(ref(db, 'ml24-waitlist'), items);
+  db.ref('ml24-waitlist').set(items);
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -782,7 +781,7 @@ window.addEventListener('load', () => {
   document.getElementById('lockFirstName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lockLastName').focus(); });
 
   // Escuchar cambios en Firebase en tiempo real
-  onValue(ref(db, 'ml24-waitlist'), (snapshot) => {
+  db.ref('ml24-waitlist').on('value', (snapshot) => {
     itemsCache = snapshot.val() || [];
     if (currentVendor) render();
   });
