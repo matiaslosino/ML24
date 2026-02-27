@@ -669,7 +669,7 @@ function renderHomeTab(items) {
   return `
     <div style="padding: 8px 0 24px">
       <!-- Saludo -->
-      <div style="margin-bottom:28px">
+      <div style="margin-bottom:28px;text-align:center">
         <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dark);line-height:1.2">${greeting},</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:var(--pink-dark);line-height:1.2">${firstName} ✦</div>
         <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--soft);margin-top:8px">Legajo #${currentLegajo}</div>
@@ -691,9 +691,12 @@ function renderHomeTab(items) {
       <!-- Mis pedidos resumen -->
       <div style="background:rgba(232,160,176,0.08);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:28px">
         <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:6px">Tus pedidos</div>
-        <div style="font-size:0.9rem;color:var(--dark);font-weight:500">
+        <div style="font-size:0.9rem;color:var(--dark);font-weight:500;margin-bottom:12px">
           Tenés <strong style="color:var(--pink-dark)">${myPending}</strong> pedido${myPending !== 1 ? 's' : ''} pendiente${myPending !== 1 ? 's' : ''} a tu nombre.
         </div>
+        <button onclick="openMyOrders()" style="background:var(--pink-dark);color:white;border:none;border-radius:8px;padding:10px 18px;font-family:'Jost',sans-serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-weight:600;width:100%">
+          📋 Ver mis pedidos
+        </button>
       </div>
 
       <!-- Accesos rápidos -->
