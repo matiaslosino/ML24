@@ -224,6 +224,47 @@
   .btn-add-product:hover { border-color: var(--pink); color: var(--pink-dark); background: rgba(232,160,176,0.05); }
   .empty-icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
 
+  /* PANEL LATERAL FILTROS */
+  .filter-panel {
+    position: fixed; top: 0; right: -320px; width: 300px; height: 100vh;
+    background: var(--cream); border-left: 1px solid var(--border);
+    z-index: 1100; transition: right 0.3s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    display: flex; flex-direction: column;
+    padding: 24px 20px; overflow-y: auto;
+  }
+  .filter-panel.open { right: 0; }
+  .filter-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,16,24,0.5); z-index: 1099;
+  }
+  .filter-overlay.open { display: block; }
+  .filter-title {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.3rem;
+    font-weight: 400; color: var(--dark); margin-bottom: 4px;
+  }
+  .filter-sub {
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--soft); margin-bottom: 20px;
+  }
+  .filter-section { margin-bottom: 20px; }
+  .filter-label {
+    font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--mid); font-weight: 600; margin-bottom: 8px; display: block;
+  }
+  .filter-active-dot {
+    display: inline-block; width: 7px; height: 7px; background: var(--pink-dark);
+    border-radius: 50%; margin-left: 5px; vertical-align: middle;
+  }
+  .btn-filter {
+    font-size: 0.65rem; color: var(--soft); background: transparent;
+    border: 1px solid rgba(232,160,176,0.3); padding: 5px 10px;
+    border-radius: 20px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .btn-filter:hover { border-color: var(--border); color: var(--pink-dark); }
+  .btn-filter.has-filters { color: var(--pink-dark); border-color: var(--pink-dark); }
+
   /* OVERLAY / MODAL */
   .overlay {
     display: none; position: fixed; inset: 0;
@@ -318,6 +359,7 @@
     <span>Lista de Espera</span>
   </div>
   <div class="header-right">
+    <div class="admin-btn" onclick="openStats()">📊 Stats</div>
     <div class="admin-btn" onclick="openMyOrders()">📋 Mis pedidos</div>
     <div class="vendor-tag" onclick="logout()">👤 <span id="vendorNameTag">—</span> · Salir</div>
   </div>
@@ -328,6 +370,54 @@
   <div class="tab" onclick="switchTab('llegaron')" id="tab-llegaron">✅ Llegaron</div>
 </div>
 <main id="mainContent"></main>
+
+<!-- FILTROS PANEL -->
+<div class="filter-overlay" id="filterOverlay" onclick="closeFilters()"></div>
+<div class="filter-panel" id="filterPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <div class="filter-title">Filtros</div>
+    <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeFilters()">✕ Cerrar</div>
+  </div>
+  <div class="filter-sub">Refiná la lista de espera</div>
+
+  <div class="filter-section">
+    <label class="filter-label">Marca</label>
+    <select id="filter-brand" onchange="applyFilters()" style="font-size:0.85rem">
+      <option value="">Todas las marcas</option>
+    </select>
+  </div>
+
+  <div class="filter-section">
+    <label class="filter-label">Vendedor</label>
+    <select id="filter-vendor" onchange="applyFilters()" style="font-size:0.85rem">
+      <option value="">Todos los vendedores</option>
+    </select>
+  </div>
+
+  <div class="filter-section">
+    <label class="filter-label">Fecha desde</label>
+    <input type="date" id="filter-date-from" onchange="applyFilters()" style="font-size:0.85rem" />
+  </div>
+
+  <div class="filter-section">
+    <label class="filter-label">Fecha hasta</label>
+    <input type="date" id="filter-date-to" onchange="applyFilters()" style="font-size:0.85rem" />
+  </div>
+
+  <button class="btn danger" onclick="clearFilters()" style="margin-top:8px">✕ Limpiar filtros</button>
+</div>
+
+<!-- STATS MODAL -->
+<div class="overlay" id="statsOverlay">
+  <div class="modal" style="max-width:500px;max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-shrink:0">
+      <div class="modal-title">📊 Estadísticas</div>
+      <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeStats()">✕ Cerrar</div>
+    </div>
+    <div class="modal-sub" id="statsSub"></div>
+    <div id="statsContent" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
 
 <!-- MIS PEDIDOS MODAL -->
 <div class="overlay" id="myOrdersOverlay">
@@ -362,6 +452,10 @@ let currentTab = 'nueva';
 let currentVendor = '';
 let searchQ = '';
 let itemsCache = [];
+let filterBrand = '';
+let filterVendor = '';
+let filterDateFrom = '';
+let filterDateTo = '';
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 function loadItems() { return itemsCache; }
@@ -556,9 +650,11 @@ function renderNuevaTab() {
 
 function renderListaTab(items) {
   let filtered = items;
+
+  // Filtro por búsqueda
   if (searchQ) {
     const q = searchQ.toLowerCase();
-    filtered = items.filter(i => {
+    filtered = filtered.filter(i => {
       const prods = i.products || [{ brand: i.brand||'', product: i.product||'' }];
       const prodStr = prods.map(p => `${p.brand} ${p.product}`).join(' ').toLowerCase();
       return prodStr.includes(q) || i.name.toLowerCase().includes(q) ||
@@ -566,14 +662,47 @@ function renderListaTab(items) {
         (i.email||'').toLowerCase().includes(q) || (i.dni||'').includes(q);
     });
   }
+
+  // Filtro por marca
+  if (filterBrand) {
+    filtered = filtered.filter(i => {
+      const prods = i.products || [{ brand: i.brand||'' }];
+      return prods.some(p => p.brand === filterBrand);
+    });
+  }
+
+  // Filtro por vendedor
+  if (filterVendor) {
+    filtered = filtered.filter(i => i.vendor === filterVendor);
+  }
+
+  // Filtro por fecha
+  if (filterDateFrom) {
+    const from = new Date(filterDateFrom).setHours(0,0,0,0);
+    filtered = filtered.filter(i => i.ts >= from);
+  }
+  if (filterDateTo) {
+    const to = new Date(filterDateTo).setHours(23,59,59,999);
+    filtered = filtered.filter(i => i.ts <= to);
+  }
+
+  const hasFilters = filterBrand || filterVendor || filterDateFrom || filterDateTo;
+
   let html = `
     <div class="section-title">En Espera <span class="badge">${items.length}</span></div>
     <div class="section-sub">Clientes pendientes de aviso</div>
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" placeholder="Buscar por producto, cliente, DNI..." value="${searchQ}" oninput="updateSearch(this.value)" />
-    </div>`;
-  if (filtered.length === 0) html += `<div class="empty"><div class="empty-icon">📋</div>No hay pedidos pendientes</div>`;
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <div class="search-wrap" style="flex:1;margin-bottom:0">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar por producto, cliente, DNI..." value="${searchQ}" oninput="updateSearch(this.value)" />
+      </div>
+      <button class="btn-filter ${hasFilters ? 'has-filters' : ''}" onclick="openFilters()">
+        ⚙️ Filtros${hasFilters ? '<span class=\'filter-active-dot\'></span>' : ''}
+      </button>
+    </div>
+    ${hasFilters ? `<div style="font-size:0.7rem;color:var(--pink-dark);margin-bottom:10px;font-weight:500">Mostrando ${filtered.length} de ${items.length} pedidos</div>` : ''}`;
+
+  if (filtered.length === 0) html += `<div class="empty"><div class="empty-icon">📋</div>No hay pedidos que coincidan</div>`;
   else filtered.sort((a,b) => b.ts - a.ts).forEach(item => { html += renderItem(item, false); });
   return html;
 }
@@ -720,13 +849,68 @@ function deleteItem(id) {
 function updateSearch(val) {
   searchQ = val;
   render();
-  // Devolver foco al buscador y mantener cursor al final
   const input = document.querySelector('.search-wrap input');
-  if (input) {
-    input.focus();
-    const len = input.value.length;
-    input.setSelectionRange(len, len);
-  }
+  if (input) { input.focus(); const len = input.value.length; input.setSelectionRange(len, len); }
+}
+
+// ─── FILTROS ──────────────────────────────────────────────────────────────────
+function openFilters() {
+  // Poblar marcas únicas
+  const items = loadItems().filter(i => !i.arrived);
+  const brands = new Set();
+  const vendors = new Set();
+  items.forEach(i => {
+    const prods = i.products || [{ brand: i.brand||'' }];
+    prods.forEach(p => { if (p.brand) brands.add(p.brand); });
+    if (i.vendor) vendors.add(i.vendor);
+  });
+
+  const brandSel = document.getElementById('filter-brand');
+  brandSel.innerHTML = '<option value="">Todas las marcas</option>';
+  [...brands].sort().forEach(b => {
+    const o = document.createElement('option');
+    o.value = b; o.textContent = b;
+    if (b === filterBrand) o.selected = true;
+    brandSel.appendChild(o);
+  });
+
+  const vendorSel = document.getElementById('filter-vendor');
+  vendorSel.innerHTML = '<option value="">Todos los vendedores</option>';
+  [...vendors].sort().forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    if (v === filterVendor) o.selected = true;
+    vendorSel.appendChild(o);
+  });
+
+  if (filterDateFrom) document.getElementById('filter-date-from').value = filterDateFrom;
+  if (filterDateTo) document.getElementById('filter-date-to').value = filterDateTo;
+
+  document.getElementById('filterPanel').classList.add('open');
+  document.getElementById('filterOverlay').classList.add('open');
+}
+
+function closeFilters() {
+  document.getElementById('filterPanel').classList.remove('open');
+  document.getElementById('filterOverlay').classList.remove('open');
+}
+
+function applyFilters() {
+  filterBrand = document.getElementById('filter-brand').value;
+  filterVendor = document.getElementById('filter-vendor').value;
+  filterDateFrom = document.getElementById('filter-date-from').value;
+  filterDateTo = document.getElementById('filter-date-to').value;
+  render();
+}
+
+function clearFilters() {
+  filterBrand = ''; filterVendor = ''; filterDateFrom = ''; filterDateTo = '';
+  document.getElementById('filter-brand').value = '';
+  document.getElementById('filter-vendor').value = '';
+  document.getElementById('filter-date-from').value = '';
+  document.getElementById('filter-date-to').value = '';
+  render();
+  closeFilters();
 }
 
 // ─── MIS PEDIDOS ──────────────────────────────────────────────────────────────
@@ -782,6 +966,132 @@ function renderMyOrderItem(item) {
 
 function closeMyOrders() {
   document.getElementById('myOrdersOverlay').classList.remove('open');
+}
+
+// ─── ESTADÍSTICAS ─────────────────────────────────────────────────────────────
+function openStats() {
+  const items = loadItems();
+  const total = items.length;
+  const pending = items.filter(i => !i.arrived).length;
+  const arrived = items.filter(i => i.arrived).length;
+
+  document.getElementById('statsSub').textContent = `${total} pedido(s) en total`;
+
+  // 1. Pendientes vs Llegados
+  const pct = total > 0 ? Math.round((arrived / total) * 100) : 0;
+  let html = `
+    <div style="margin-bottom:20px">
+      <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Pendientes vs Llegados</div>
+      <div style="display:flex;gap:12px;margin-bottom:8px">
+        <div style="flex:1;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.3);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:1.8rem;font-weight:700;color:#b8720a">${pending}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:#b8720a;margin-top:2px">Pendientes</div>
+        </div>
+        <div style="flex:1;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:1.8rem;font-weight:700;color:#1a8a40">${arrived}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:#1a8a40;margin-top:2px">Llegados</div>
+        </div>
+      </div>
+      <div style="background:rgba(61,37,48,0.08);border-radius:20px;height:8px;overflow:hidden">
+        <div style="background:var(--pink-dark);height:100%;width:${pct}%;border-radius:20px;transition:width 0.5s"></div>
+      </div>
+      <div style="font-size:0.68rem;color:var(--mid);text-align:right;margin-top:4px;font-weight:500">${pct}% completado</div>
+    </div>`;
+
+  // 2. Pedidos por vendedor
+  const byVendor = {};
+  items.forEach(i => {
+    if (!byVendor[i.vendor]) byVendor[i.vendor] = { total: 0, pending: 0, arrived: 0 };
+    byVendor[i.vendor].total++;
+    i.arrived ? byVendor[i.vendor].arrived++ : byVendor[i.vendor].pending++;
+  });
+  const vendorsSorted = Object.entries(byVendor).sort((a,b) => b[1].total - a[1].total);
+  const maxVendor = vendorsSorted[0]?.[1].total || 1;
+
+  html += `<div style="margin-bottom:20px">
+    <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Pedidos por Vendedor</div>`;
+  vendorsSorted.forEach(([name, data]) => {
+    const w = Math.round((data.total / maxVendor) * 100);
+    html += `
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:0.82rem;font-weight:600;color:var(--dark)">${name}</span>
+          <span style="font-size:0.75rem;color:var(--mid);font-weight:500">${data.total} · <span style="color:#b8720a">${data.pending} pend.</span> · <span style="color:#1a8a40">${data.arrived} ok</span></span>
+        </div>
+        <div style="background:rgba(61,37,48,0.08);border-radius:20px;height:7px;overflow:hidden">
+          <div style="background:var(--pink-dark);height:100%;width:${w}%;border-radius:20px"></div>
+        </div>
+      </div>`;
+  });
+  html += `</div>`;
+
+  // 3. Marcas más solicitadas
+  const byBrand = {};
+  items.forEach(i => {
+    const prods = i.products || [{ brand: i.brand||'Sin marca' }];
+    prods.forEach(p => {
+      const b = p.brand || 'Sin marca';
+      byBrand[b] = (byBrand[b] || 0) + 1;
+    });
+  });
+  const brandsSorted = Object.entries(byBrand).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  const maxBrand = brandsSorted[0]?.[1] || 1;
+
+  html += `<div style="margin-bottom:20px">
+    <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Marcas más Solicitadas</div>`;
+  brandsSorted.forEach(([brand, count]) => {
+    const w = Math.round((count / maxBrand) * 100);
+    html += `
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:0.8rem;font-weight:600;color:var(--dark)">${brand}</span>
+          <span style="font-size:0.75rem;color:var(--mid);font-weight:500">${count} pedido${count>1?'s':''}</span>
+        </div>
+        <div style="background:rgba(61,37,48,0.08);border-radius:20px;height:6px;overflow:hidden">
+          <div style="background:var(--pink);height:100%;width:${w}%;border-radius:20px"></div>
+        </div>
+      </div>`;
+  });
+  html += `</div>`;
+
+  // 4. Evolución por fecha (últimos 14 días)
+  const dayMap = {};
+  const today = new Date();
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const key = d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit' });
+    dayMap[key] = 0;
+  }
+  items.forEach(i => {
+    const key = new Date(i.ts).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit' });
+    if (dayMap[key] !== undefined) dayMap[key]++;
+  });
+  const dayEntries = Object.entries(dayMap);
+  const maxDay = Math.max(...dayEntries.map(e => e[1]), 1);
+
+  html += `<div style="margin-bottom:8px">
+    <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Evolución últimos 14 días</div>
+    <div style="display:flex;align-items:flex-end;gap:3px;height:60px">`;
+  dayEntries.forEach(([day, count]) => {
+    const h = Math.round((count / maxDay) * 100);
+    html += `
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="width:100%;background:${count>0?'var(--pink-dark)':'rgba(61,37,48,0.1)'};height:${Math.max(h,4)}%;border-radius:4px 4px 0 0;min-height:4px"></div>
+      </div>`;
+  });
+  html += `</div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="font-size:0.6rem;color:var(--soft)">${dayEntries[0][0]}</span>
+      <span style="font-size:0.6rem;color:var(--soft)">${dayEntries[dayEntries.length-1][0]}</span>
+    </div>
+  </div>`;
+
+  document.getElementById('statsContent').innerHTML = html;
+  document.getElementById('statsOverlay').classList.add('open');
+}
+
+function closeStats() {
+  document.getElementById('statsOverlay').classList.remove('open');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
