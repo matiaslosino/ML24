@@ -58,30 +58,61 @@
     font-weight: 400;
     margin-top: 1px;
   }
-  .header-right { display: flex; align-items: center; gap: 8px; }
+  .header-right { display: flex; align-items: center; gap: 6px; position: relative; }
   .vendor-tag {
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    color: var(--pink);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--pink-light);
     background: rgba(232,160,176,0.15);
-    border: 1px solid var(--border);
-    padding: 5px 12px;
+    border: 1px solid rgba(232,160,176,0.4);
+    padding: 7px 14px;
     border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
+    font-weight: 600;
   }
-  .vendor-tag:hover { background: rgba(232,160,176,0.25); }
-  .admin-btn {
-    font-size: 0.65rem;
-    color: var(--soft);
+  .logout-btn {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--pink);
     background: transparent;
-    border: 1px solid rgba(232,160,176,0.15);
-    padding: 5px 10px;
+    border: 1px solid rgba(232,160,176,0.3);
+    padding: 7px 12px;
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s;
+    font-weight: 500;
   }
-  .admin-btn:hover { border-color: var(--border); color: var(--pink); }
+  .logout-btn:hover { background: rgba(192,57,43,0.1); color: #ff8080; border-color: rgba(192,57,43,0.3); }
+
+  /* MENÚ DESPLEGABLE */
+  .menu-btn {
+    font-size: 0.8rem;
+    color: var(--pink-light);
+    background: rgba(232,160,176,0.12);
+    border: 1px solid rgba(232,160,176,0.35);
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .menu-btn:hover { background: rgba(232,160,176,0.22); border-color: var(--pink); }
+  .dropdown {
+    position: absolute; top: calc(100% + 10px); right: 0;
+    background: var(--dark); border: 1px solid rgba(232,160,176,0.3);
+    border-radius: 12px; min-width: 180px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 500; overflow: hidden;
+    display: none; flex-direction: column;
+  }
+  .dropdown.open { display: flex; }
+  .dropdown-item {
+    padding: 12px 18px; font-size: 0.75rem; letter-spacing: 0.1em;
+    color: var(--pink-light); cursor: pointer; transition: background 0.15s;
+    font-weight: 600; border-bottom: 1px solid rgba(232,160,176,0.1);
+  }
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item:hover { background: rgba(232,160,176,0.12); }
 
   /* TABS */
   .tabs { display: flex; background: var(--dark); border-top: 1px solid rgba(232,160,176,0.2); }
@@ -150,12 +181,17 @@
   /* LIST ITEMS */
   .wait-item {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px; margin-bottom: 12px;
+    border-radius: 12px; padding: 16px 16px 16px 20px; margin-bottom: 12px;
     box-shadow: 0 1px 8px rgba(232,160,176,0.06);
     transition: all 0.3s; animation: fadeIn 0.3s ease;
+    border-left: 4px solid var(--pink-dark);
+    position: relative;
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-  .wait-item.arrived { border-color: rgba(37,211,102,0.25); }
+  .wait-item.arrived {
+    border-color: rgba(37,211,102,0.25);
+    border-left: 4px solid #1a8a40;
+  }
   .item-product {
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.15rem; font-weight: 600; color: var(--dark); margin-bottom: 6px;
@@ -338,14 +374,18 @@
   <div class="lock-sub">Lista de Espera · Vendedores</div>
   <div class="lock-card">
     <div class="lock-title">Identificate</div>
-    <div class="lock-sub2">Ingresá tu nombre y apellido</div>
+    <div class="lock-sub2">Ingresá tus datos</div>
     <div class="field">
       <label style="color:var(--soft)">Nombre</label>
       <input type="text" id="lockFirstName" placeholder="Ej: María" onkeydown="if(event.key==='Enter')document.getElementById('lockLastName').focus()" />
     </div>
     <div class="field">
       <label style="color:var(--soft)">Apellido</label>
-      <input type="text" id="lockLastName" placeholder="Ej: González" onkeydown="if(event.key==='Enter')tryLogin()" />
+      <input type="text" id="lockLastName" placeholder="Ej: González" onkeydown="if(event.key==='Enter')document.getElementById('lockLegajo').focus()" />
+    </div>
+    <div class="field">
+      <label style="color:var(--soft)">Número de legajo</label>
+      <input type="number" id="lockLegajo" placeholder="Ej: 1234" onkeydown="if(event.key==='Enter')tryLogin()" />
     </div>
     <div class="lock-error" id="lockError"></div>
     <button class="lock-btn" id="loginBtn">Ingresar</button>
@@ -359,17 +399,95 @@
     <span>Lista de Espera</span>
   </div>
   <div class="header-right">
-    <div class="admin-btn" onclick="openStats()">📊 Stats</div>
-    <div class="admin-btn" onclick="openMyOrders()">📋 Mis pedidos</div>
-    <div class="vendor-tag" onclick="logout()">👤 <span id="vendorNameTag">—</span> · Salir</div>
+    <div class="vendor-tag">👤 <span id="vendorNameTag">—</span></div>
+    <div class="logout-btn" onclick="logout()">Salir</div>
+    <div class="menu-btn" onclick="toggleMenu()">⋯</div>
+    <div class="dropdown" id="headerMenu">
+      <div class="dropdown-item" onclick="openExport();toggleMenu()">⬇️ Exportar</div>
+      <div class="dropdown-item" onclick="openStats();toggleMenu()">📊 Stats</div>
+      <div class="dropdown-item" onclick="openMyOrders();toggleMenu()">📋 Mis pedidos</div>
+    </div>
   </div>
 </header>
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('nueva')" id="tab-nueva">➕ Nueva</div>
+  <div class="tab active" onclick="switchTab('home')" id="tab-home">🏠 Inicio</div>
+  <div class="tab" onclick="switchTab('nueva')" id="tab-nueva">➕ Nueva</div>
   <div class="tab" onclick="switchTab('lista')" id="tab-lista">📋 Lista <span id="pendingBadge"></span></div>
   <div class="tab" onclick="switchTab('llegaron')" id="tab-llegaron">✅ Llegaron</div>
 </div>
 <main id="mainContent"></main>
+
+<!-- EDITAR PEDIDO MODAL -->
+<div class="overlay" id="editOverlay">
+  <div class="modal" style="max-width:480px;max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-shrink:0">
+      <div class="modal-title">✏️ Editar Pedido</div>
+      <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeEditItem()">✕ Cerrar</div>
+    </div>
+    <div class="modal-sub">Modificá los datos del pedido</div>
+    <div style="overflow-y:auto;flex:1">
+      <div class="field">
+        <label>Producto(s)</label>
+        <div id="edit-product-list"></div>
+        <button type="button" class="btn-add-product" onclick="addEditProductRow()">+ Agregar otro producto</button>
+      </div>
+      <div class="field"><label>Nombre</label><input type="text" id="edit-name" /></div>
+      <div class="field"><label>Apellido</label><input type="text" id="edit-lastname" /></div>
+      <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="edit-phone" /></div>
+      <div class="field"><label>Mail</label><input type="email" id="edit-email" /></div>
+      <div class="field"><label>DNI</label><input type="text" id="edit-dni" /></div>
+      <div class="field"><label>Notas</label><input type="text" id="edit-notes" /></div>
+      <button class="btn" onclick="saveEditItem()">Guardar cambios</button>
+      <button class="btn ghost" onclick="closeEditItem()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORTAR MODAL -->
+<div class="overlay" id="exportOverlay">
+  <div class="modal" style="max-width:360px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="modal-title">⬇️ Exportar</div>
+      <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeExport()">✕ Cerrar</div>
+    </div>
+    <div class="modal-sub">Descargá el listado completo</div>
+    <div id="exportInfo" style="font-size:0.82rem;color:var(--mid);margin-bottom:20px;font-weight:500"></div>
+    <button class="btn" onclick="exportExcel()" style="margin-bottom:10px">📊 Descargar Excel</button>
+    <button class="btn" onclick="exportPDF()" style="background:transparent;color:var(--pink-dark);border-color:var(--pink-dark)">📄 Descargar PDF</button>
+    <button class="btn ghost" onclick="closeExport()">Cancelar</button>
+  </div>
+</div>
+
+<!-- FILTROS LLEGARON PANEL -->
+<div class="filter-overlay" id="filterOverlayL" onclick="closeFiltersL()"></div>
+<div class="filter-panel" id="filterPanelL">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <div class="filter-title">Filtros</div>
+    <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeFiltersL()">✕ Cerrar</div>
+  </div>
+  <div class="filter-sub">Filtrar productos llegados</div>
+  <div class="filter-section">
+    <label class="filter-label">Marca</label>
+    <select id="filter-brand-l" onchange="applyFiltersL()" style="font-size:0.85rem">
+      <option value="">Todas las marcas</option>
+    </select>
+  </div>
+  <div class="filter-section">
+    <label class="filter-label">Vendedor</label>
+    <select id="filter-vendor-l" onchange="applyFiltersL()" style="font-size:0.85rem">
+      <option value="">Todos los vendedores</option>
+    </select>
+  </div>
+  <div class="filter-section">
+    <label class="filter-label">Fecha llegada desde</label>
+    <input type="date" id="filter-date-from-l" onchange="applyFiltersL()" style="font-size:0.85rem" />
+  </div>
+  <div class="filter-section">
+    <label class="filter-label">Fecha llegada hasta</label>
+    <input type="date" id="filter-date-to-l" onchange="applyFiltersL()" style="font-size:0.85rem" />
+  </div>
+  <button class="btn danger" onclick="clearFiltersL()" style="margin-top:8px">✕ Limpiar filtros</button>
+</div>
 
 <!-- FILTROS PANEL -->
 <div class="filter-overlay" id="filterOverlay" onclick="closeFilters()"></div>
@@ -431,6 +549,9 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
@@ -449,13 +570,19 @@ const db = firebase.database();
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let currentTab = 'nueva';
-let currentVendor = '';
+let currentVendor = '';   // nombre para mostrar
+let currentLegajo = '';   // identificador único
 let searchQ = '';
+let searchLlegaron = '';
 let itemsCache = [];
 let filterBrand = '';
 let filterVendor = '';
 let filterDateFrom = '';
 let filterDateTo = '';
+let filterBrandL = '';
+let filterVendorL = '';
+let filterDateFromL = '';
+let filterDateToL = '';
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 function loadItems() { return itemsCache; }
@@ -466,28 +593,42 @@ function saveItems(items) {
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
+function capitalize(str) {
+  return str.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
 function tryLogin() {
-  const first = document.getElementById('lockFirstName').value.trim();
-  const last = document.getElementById('lockLastName').value.trim();
-  if (!first || !last) {
-    document.getElementById('lockError').textContent = 'Ingresá nombre y apellido.';
+  const first = capitalize(document.getElementById('lockFirstName').value);
+  const last = capitalize(document.getElementById('lockLastName').value);
+  const legajo = document.getElementById('lockLegajo').value.trim();
+  if (!first || !last || !legajo) {
+    document.getElementById('lockError').textContent = 'Completá nombre, apellido y legajo.';
+    return;
+  }
+  if (!/^\d+$/.test(legajo)) {
+    document.getElementById('lockError').textContent = 'El legajo debe ser solo números.';
     return;
   }
   const fullName = first + ' ' + last;
   currentVendor = fullName;
+  currentLegajo = legajo;
   localStorage.setItem('ml24vendor', fullName);
+  localStorage.setItem('ml24legajo', legajo);
   document.getElementById('lockScreen').style.display = 'none';
   document.getElementById('vendorNameTag').textContent = fullName;
-  render();
+  switchTab('home');
 }
 
 function logout() {
   if (!confirm('¿Cerrar sesión?')) return;
   currentVendor = '';
+  currentLegajo = '';
   localStorage.removeItem('ml24vendor');
+  localStorage.removeItem('ml24legajo');
   document.getElementById('lockScreen').style.display = 'flex';
   document.getElementById('lockFirstName').value = '';
   document.getElementById('lockLastName').value = '';
+  document.getElementById('lockLegajo').value = '';
   document.getElementById('lockError').textContent = '';
 }
 
@@ -506,9 +647,66 @@ function render() {
   const pending = items.filter(i => !i.arrived).length;
   document.getElementById('pendingBadge').innerHTML = pending > 0 ? `<span class="badge">${pending}</span>` : '';
 
-  if (currentTab === 'nueva') main.innerHTML = renderNuevaTab();
+  if (currentTab === 'home') main.innerHTML = renderHomeTab(items);
+  else if (currentTab === 'nueva') main.innerHTML = renderNuevaTab();
   else if (currentTab === 'lista') main.innerHTML = renderListaTab(items.filter(i => !i.arrived));
   else main.innerHTML = renderLlegaronTab(items.filter(i => i.arrived));
+}
+
+function renderHomeTab(items) {
+  const pending = items.filter(i => !i.arrived).length;
+  const arrived = items.filter(i => i.arrived).length;
+  const myItems = items.filter(i => i.legajo ? i.legajo === currentLegajo : i.vendor === currentVendor);
+  const myPending = myItems.filter(i => !i.arrived).length;
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const firstName = currentVendor.split(' ')[0];
+
+  return `
+    <div style="padding: 8px 0 24px">
+      <!-- Saludo -->
+      <div style="margin-bottom:28px">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dark);line-height:1.2">${greeting},</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:var(--pink-dark);line-height:1.2">${firstName} ✦</div>
+        <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--soft);margin-top:8px">Legajo #${currentLegajo}</div>
+      </div>
+
+      <!-- Resumen general -->
+      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Resumen general</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px">
+        <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--pink-dark);border-radius:12px;padding:16px">
+          <div style="font-size:2rem;font-weight:700;color:var(--dark)">${pending}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Pendientes</div>
+        </div>
+        <div style="background:var(--card);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:12px;padding:16px">
+          <div style="font-size:2rem;font-weight:700;color:var(--dark)">${arrived}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Llegaron</div>
+        </div>
+      </div>
+
+      <!-- Mis pedidos resumen -->
+      <div style="background:rgba(232,160,176,0.08);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:28px">
+        <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:6px">Tus pedidos</div>
+        <div style="font-size:0.9rem;color:var(--dark);font-weight:500">
+          Tenés <strong style="color:var(--pink-dark)">${myPending}</strong> pedido${myPending !== 1 ? 's' : ''} pendiente${myPending !== 1 ? 's' : ''} a tu nombre.
+        </div>
+      </div>
+
+      <!-- Accesos rápidos -->
+      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Acceso rápido</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onclick="switchTab('nueva')" style="background:var(--dark);color:var(--pink-light);border:1px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+          ➕ Nuevo pedido
+        </button>
+        <button onclick="switchTab('lista')" style="background:var(--card);color:var(--dark);border:1px solid var(--border);border-left:4px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+          📋 Ver lista de espera <span style="color:var(--pink-dark)">(${pending})</span>
+        </button>
+        <button onclick="switchTab('llegaron')" style="background:var(--card);color:var(--dark);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+          ✅ Ver productos llegados <span style="color:#1a8a40">(${arrived})</span>
+        </button>
+      </div>
+    </div>`;
 }
 
 function renderNuevaTab() {
@@ -708,9 +906,53 @@ function renderListaTab(items) {
 }
 
 function renderLlegaronTab(items) {
-  let html = `<div class="section-title">Llegaron</div><div class="section-sub">Avisar al cliente · productos disponibles</div>`;
-  if (items.length === 0) html += `<div class="empty"><div class="empty-icon">✨</div>Ningún producto marcado como llegado aún</div>`;
-  else items.sort((a,b) => b.arrivedTs - a.arrivedTs).forEach(item => { html += renderItem(item, true); });
+  let filtered = items;
+
+  if (searchLlegaron) {
+    const q = searchLlegaron.toLowerCase();
+    filtered = filtered.filter(i => {
+      const prods = i.products || [{ brand: i.brand||'', product: i.product||'' }];
+      const prodStr = prods.map(p => `${p.brand} ${p.product}`).join(' ').toLowerCase();
+      return prodStr.includes(q) || i.name.toLowerCase().includes(q) ||
+        (i.lastname||'').toLowerCase().includes(q) || i.phone.includes(q) ||
+        (i.brand||'').toLowerCase().includes(q);
+    });
+  }
+
+  if (filterBrandL) {
+    filtered = filtered.filter(i => {
+      const prods = i.products || [{ brand: i.brand||'' }];
+      return prods.some(p => p.brand === filterBrandL);
+    });
+  }
+  if (filterVendorL) filtered = filtered.filter(i => i.vendor === filterVendorL);
+  if (filterDateFromL) {
+    const from = new Date(filterDateFromL).setHours(0,0,0,0);
+    filtered = filtered.filter(i => i.arrivedTs >= from);
+  }
+  if (filterDateToL) {
+    const to = new Date(filterDateToL).setHours(23,59,59,999);
+    filtered = filtered.filter(i => i.arrivedTs <= to);
+  }
+
+  const hasFilters = filterBrandL || filterVendorL || filterDateFromL || filterDateToL;
+
+  let html = `
+    <div class="section-title">Llegaron</div>
+    <div class="section-sub">Avisar al cliente · productos disponibles</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <div class="search-wrap" style="flex:1;margin-bottom:0">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar por producto, cliente..." value="${searchLlegaron}" oninput="updateSearchLlegaron(this.value)" />
+      </div>
+      <button class="btn-filter ${hasFilters ? 'has-filters' : ''}" onclick="openFiltersL()">
+        ⚙️ Filtros${hasFilters ? '<span class=\'filter-active-dot\'></span>' : ''}
+      </button>
+    </div>
+    ${hasFilters ? `<div style="font-size:0.7rem;color:var(--pink-dark);margin-bottom:10px;font-weight:500">Mostrando ${filtered.length} de ${items.length} pedidos</div>` : ''}`;
+
+  if (filtered.length === 0) html += `<div class="empty"><div class="empty-icon">✨</div>Ningún producto marcado como llegado aún</div>`;
+  else filtered.sort((a,b) => b.arrivedTs - a.arrivedTs).forEach(item => { html += renderItem(item, true); });
   return html;
 }
 
@@ -748,6 +990,7 @@ function renderItem(item, arrived) {
       <div class="item-actions">
         ${!arrived ? `<button class="btn-sm btn-arrived" onclick="markArrived('${item.id}')">Llegó ✓</button>` : `<button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border)" onclick="unmarkArrived('${item.id}')">↩ Cancelar llegada</button>`}
         <a href="${waLink}" target="_blank" class="btn-sm btn-whatsapp">💬 WhatsApp</a>
+        <button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border);max-width:40px" onclick="openEditItem('${item.id}')" title="Editar">✏️</button>
         <button class="btn-sm btn-delete" onclick="deleteItem('${item.id}')" title="Eliminar">🗑</button>
       </div>
     </div>`;
@@ -819,7 +1062,7 @@ function addItem() {
   const notes = document.getElementById('f-notes').value.trim();
   if (validProducts.length === 0 || !name || !phone) { alert('Por favor completá al menos un producto, nombre y teléfono.'); return; }
   const items = loadItems();
-  items.push({ id: Date.now().toString(), products: validProducts, name, lastname, phone, email, dni, notes, vendor: currentVendor, ts: Date.now(), arrived: false, arrivedTs: null });
+  items.push({ id: Date.now().toString(), products: validProducts, name, lastname, phone, email, dni, notes, vendor: currentVendor, legajo: currentLegajo, ts: Date.now(), arrived: false, arrivedTs: null });
   saveItems(items);
   resetProductRows();
   ['f-name','f-lastname','f-phone','f-email','f-dni','f-notes'].forEach(id => { document.getElementById(id).value = ''; });
@@ -853,16 +1096,119 @@ function updateSearch(val) {
   if (input) { input.focus(); const len = input.value.length; input.setSelectionRange(len, len); }
 }
 
-// ─── FILTROS ──────────────────────────────────────────────────────────────────
+function updateSearchLlegaron(val) {
+  searchLlegaron = val;
+  render();
+  const input = document.querySelector('.search-wrap input');
+  if (input) { input.focus(); const len = input.value.length; input.setSelectionRange(len, len); }
+}
+
+
+// ─── EDITAR PEDIDO ────────────────────────────────────────────────────────────
+let editingId = null;
+let editProductRowCount = 0;
+
+function openEditItem(id) {
+  const items = loadItems();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  editingId = id;
+  editProductRowCount = 0;
+
+  const products = item.products || [{ brand: item.brand||'', product: item.product||'' }];
+  const list = document.getElementById('edit-product-list');
+  list.innerHTML = '';
+  products.forEach(p => {
+    const idx = editProductRowCount++;
+    const div = document.createElement('div');
+    div.className = 'product-row';
+    div.id = `edit-row-${idx}`;
+    div.innerHTML = `
+      <div class="field">
+        <select id="edit-brand-${idx}">${buildBrandOptions()}</select>
+      </div>
+      <div class="field" style="flex:1.5">
+        <input type="text" id="edit-product-${idx}" placeholder="Ej: EDP 100ml" value="${p.product||''}" />
+      </div>
+      ${idx > 0 ? `<button type="button" class="btn-remove-product" onclick="removeEditProductRow(${idx})">✕</button>` : ''}`;
+    list.appendChild(div);
+    const sel = document.getElementById(`edit-brand-${idx}`);
+    if (sel) sel.value = p.brand || '';
+  });
+
+  document.getElementById('edit-name').value = item.name || '';
+  document.getElementById('edit-lastname').value = item.lastname || '';
+  document.getElementById('edit-phone').value = item.phone || '';
+  document.getElementById('edit-email').value = item.email || '';
+  document.getElementById('edit-dni').value = item.dni || '';
+  document.getElementById('edit-notes').value = item.notes || '';
+  document.getElementById('editOverlay').classList.add('open');
+}
+
+function addEditProductRow() {
+  const idx = editProductRowCount++;
+  const div = document.createElement('div');
+  div.className = 'product-row';
+  div.id = `edit-row-${idx}`;
+  div.innerHTML = `
+    <div class="field">
+      <select id="edit-brand-${idx}">${buildBrandOptions()}</select>
+    </div>
+    <div class="field" style="flex:1.5">
+      <input type="text" id="edit-product-${idx}" placeholder="Ej: EDP 100ml" />
+    </div>
+    <button type="button" class="btn-remove-product" onclick="removeEditProductRow(${idx})">✕</button>`;
+  document.getElementById('edit-product-list').appendChild(div);
+}
+
+function removeEditProductRow(idx) {
+  const row = document.getElementById(`edit-row-${idx}`);
+  if (row) row.remove();
+}
+
+function getEditProducts() {
+  const products = [];
+  document.querySelectorAll('#edit-product-list .product-row').forEach(row => {
+    const idx = row.id.replace('edit-row-', '');
+    const brand = (document.getElementById(`edit-brand-${idx}`)?.value || '').trim();
+    const product = (document.getElementById(`edit-product-${idx}`)?.value || '').trim();
+    if (brand || product) products.push({ brand, product });
+  });
+  return products;
+}
+
+function saveEditItem() {
+  const products = getEditProducts().filter(p => p.product);
+  const name = document.getElementById('edit-name').value.trim();
+  const phone = document.getElementById('edit-phone').value.trim();
+  if (products.length === 0 || !name || !phone) { alert('Por favor completá al menos un producto, nombre y teléfono.'); return; }
+  const items = loadItems();
+  const idx = items.findIndex(i => i.id === editingId);
+  if (idx === -1) return;
+  items[idx] = { ...items[idx], products, name,
+    lastname: document.getElementById('edit-lastname').value.trim(),
+    phone, email: document.getElementById('edit-email').value.trim(),
+    dni: document.getElementById('edit-dni').value.trim(),
+    notes: document.getElementById('edit-notes').value.trim(),
+  };
+  saveItems(items);
+  closeEditItem();
+  render();
+}
+
+function closeEditItem() {
+  editingId = null;
+  document.getElementById('editOverlay').classList.remove('open');
+}
+
 function openFilters() {
-  // Poblar marcas únicas
   const items = loadItems().filter(i => !i.arrived);
   const brands = new Set();
-  const vendors = new Set();
+  const vendorMap = {}; // nombre → legajo
   items.forEach(i => {
     const prods = i.products || [{ brand: i.brand||'' }];
     prods.forEach(p => { if (p.brand) brands.add(p.brand); });
-    if (i.vendor) vendors.add(i.vendor);
+    if (i.vendor) vendorMap[i.vendor] = i.legajo || '';
   });
 
   const brandSel = document.getElementById('filter-brand');
@@ -876,10 +1222,11 @@ function openFilters() {
 
   const vendorSel = document.getElementById('filter-vendor');
   vendorSel.innerHTML = '<option value="">Todos los vendedores</option>';
-  [...vendors].sort().forEach(v => {
+  Object.entries(vendorMap).sort((a,b) => a[0].localeCompare(b[0])).forEach(([name, legajo]) => {
     const o = document.createElement('option');
-    o.value = v; o.textContent = v;
-    if (v === filterVendor) o.selected = true;
+    o.value = name;
+    o.textContent = legajo ? `${name} (Leg. #${legajo})` : name;
+    if (name === filterVendor) o.selected = true;
     vendorSel.appendChild(o);
   });
 
@@ -913,9 +1260,72 @@ function clearFilters() {
   closeFilters();
 }
 
+// ─── FILTROS LLEGARON ─────────────────────────────────────────────────────────
+function openFiltersL() {
+  const items = loadItems().filter(i => i.arrived);
+  const brands = new Set();
+  const vendorMap = {};
+  items.forEach(i => {
+    const prods = i.products || [{ brand: i.brand||'' }];
+    prods.forEach(p => { if (p.brand) brands.add(p.brand); });
+    if (i.vendor) vendorMap[i.vendor] = i.legajo || '';
+  });
+
+  const brandSel = document.getElementById('filter-brand-l');
+  brandSel.innerHTML = '<option value="">Todas las marcas</option>';
+  [...brands].sort().forEach(b => {
+    const o = document.createElement('option');
+    o.value = b; o.textContent = b;
+    if (b === filterBrandL) o.selected = true;
+    brandSel.appendChild(o);
+  });
+
+  const vendorSel = document.getElementById('filter-vendor-l');
+  vendorSel.innerHTML = '<option value="">Todos los vendedores</option>';
+  Object.entries(vendorMap).sort((a,b) => a[0].localeCompare(b[0])).forEach(([name, legajo]) => {
+    const o = document.createElement('option');
+    o.value = name;
+    o.textContent = legajo ? `${name} (Leg. #${legajo})` : name;
+    if (name === filterVendorL) o.selected = true;
+    vendorSel.appendChild(o);
+  });
+
+  if (filterDateFromL) document.getElementById('filter-date-from-l').value = filterDateFromL;
+  if (filterDateToL) document.getElementById('filter-date-to-l').value = filterDateToL;
+
+  document.getElementById('filterPanelL').classList.add('open');
+  document.getElementById('filterOverlayL').classList.add('open');
+}
+
+function closeFiltersL() {
+  document.getElementById('filterPanelL').classList.remove('open');
+  document.getElementById('filterOverlayL').classList.remove('open');
+}
+
+function applyFiltersL() {
+  filterBrandL = document.getElementById('filter-brand-l').value;
+  filterVendorL = document.getElementById('filter-vendor-l').value;
+  filterDateFromL = document.getElementById('filter-date-from-l').value;
+  filterDateToL = document.getElementById('filter-date-to-l').value;
+  render();
+}
+
+function clearFiltersL() {
+  filterBrandL = ''; filterVendorL = ''; filterDateFromL = ''; filterDateToL = '';
+  document.getElementById('filter-brand-l').value = '';
+  document.getElementById('filter-vendor-l').value = '';
+  document.getElementById('filter-date-from-l').value = '';
+  document.getElementById('filter-date-to-l').value = '';
+  render();
+  closeFiltersL();
+}
+
 // ─── MIS PEDIDOS ──────────────────────────────────────────────────────────────
 function openMyOrders() {
-  const items = loadItems().filter(i => i.vendor === currentVendor);
+  // Filtrar por legajo si existe, sino por nombre (compatibilidad con pedidos viejos)
+  const items = loadItems().filter(i =>
+    i.legajo ? i.legajo === currentLegajo : i.vendor === currentVendor
+  );
   const pending = items.filter(i => !i.arrived);
   const arrived = items.filter(i => i.arrived);
   document.getElementById('myOrdersSub').textContent = `${items.length} pedido(s) · ${pending.length} pendiente(s) · ${arrived.length} llegado(s)`;
@@ -1054,37 +1464,7 @@ function openStats() {
   });
   html += `</div>`;
 
-  // 4. Evolución por fecha (últimos 14 días)
-  const dayMap = {};
-  const today = new Date();
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    const key = d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit' });
-    dayMap[key] = 0;
-  }
-  items.forEach(i => {
-    const key = new Date(i.ts).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit' });
-    if (dayMap[key] !== undefined) dayMap[key]++;
-  });
-  const dayEntries = Object.entries(dayMap);
-  const maxDay = Math.max(...dayEntries.map(e => e[1]), 1);
 
-  html += `<div style="margin-bottom:8px">
-    <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Evolución últimos 14 días</div>
-    <div style="display:flex;align-items:flex-end;gap:3px;height:60px">`;
-  dayEntries.forEach(([day, count]) => {
-    const h = Math.round((count / maxDay) * 100);
-    html += `
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-        <div style="width:100%;background:${count>0?'var(--pink-dark)':'rgba(61,37,48,0.1)'};height:${Math.max(h,4)}%;border-radius:4px 4px 0 0;min-height:4px"></div>
-      </div>`;
-  });
-  html += `</div>
-    <div style="display:flex;justify-content:space-between;margin-top:4px">
-      <span style="font-size:0.6rem;color:var(--soft)">${dayEntries[0][0]}</span>
-      <span style="font-size:0.6rem;color:var(--soft)">${dayEntries[dayEntries.length-1][0]}</span>
-    </div>
-  </div>`;
 
   document.getElementById('statsContent').innerHTML = html;
   document.getElementById('statsOverlay').classList.add('open');
@@ -1092,6 +1472,97 @@ function openStats() {
 
 function closeStats() {
   document.getElementById('statsOverlay').classList.remove('open');
+}
+
+// ─── MENÚ ─────────────────────────────────────────────────────────────────────
+function toggleMenu() {
+  document.getElementById('headerMenu').classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('headerMenu');
+  if (menu && !e.target.closest('.menu-btn') && !e.target.closest('.dropdown')) {
+    menu.classList.remove('open');
+  }
+});
+
+// ─── EXPORTAR ─────────────────────────────────────────────────────────────────
+function openExport() {
+  const items = loadItems();
+  const pending = items.filter(i => !i.arrived).length;
+  const arrived = items.filter(i => i.arrived).length;
+  document.getElementById('exportInfo').textContent = `${items.length} pedidos en total · ${pending} pendientes · ${arrived} llegados`;
+  document.getElementById('exportOverlay').classList.add('open');
+}
+
+function closeExport() {
+  document.getElementById('exportOverlay').classList.remove('open');
+}
+
+function getExportRows() {
+  return loadItems().map(item => {
+    const prods = item.products || [{ brand: item.brand||'', product: item.product||'' }];
+    const marcas = prods.map(p => p.brand || '—').join(' / ');
+    const productos = prods.map(p => p.product || '—').join(' / ');
+    const fecha = new Date(item.ts).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'4-digit' });
+    return {
+      'Estado': item.arrived ? 'Llegó' : 'Pendiente',
+      'Marca(s)': marcas,
+      'Producto(s)': productos,
+      'Nombre': item.name || '',
+      'Apellido': item.lastname || '',
+      'Teléfono': item.phone || '',
+      'Mail': item.email || '',
+      'DNI': item.dni || '',
+      'Notas': item.notes || '',
+      'Vendedor': item.vendor || '',
+      'Fecha': fecha
+    };
+  });
+}
+
+function exportExcel() {
+  const rows = getExportRows();
+  if (rows.length === 0) { alert('No hay pedidos para exportar.'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [8,12,20,12,12,14,20,10,20,16,10].map(w => ({ wch: w }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Lista de Espera');
+  const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+  XLSX.writeFile(wb, `ML24_ListaEspera_${fecha}.xlsx`);
+  closeExport();
+}
+
+function exportPDF() {
+  const rows = getExportRows();
+  if (rows.length === 0) { alert('No hay pedidos para exportar.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const fecha = new Date().toLocaleDateString('es-AR');
+  doc.setFontSize(16);
+  doc.setTextColor(196, 96, 122);
+  doc.text('ML24 · Lista de Espera', 14, 16);
+  doc.setFontSize(9);
+  doc.setTextColor(140, 102, 114);
+  doc.text(`Exportado el ${fecha} · ${rows.length} pedidos`, 14, 22);
+
+  doc.autoTable({
+    startY: 28,
+    head: [['Estado', 'Marca(s)', 'Producto(s)', 'Cliente', 'Teléfono', 'Vendedor', 'Fecha', 'Notas']],
+    body: rows.map(r => [
+      r['Estado'], r['Marca(s)'], r['Producto(s)'],
+      `${r['Nombre']} ${r['Apellido']}`.trim(),
+      r['Teléfono'], r['Vendedor'], r['Fecha'], r['Notas']
+    ]),
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [196, 96, 122], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [253, 248, 249] },
+    columnStyles: { 0: { cellWidth: 20 }, 5: { cellWidth: 28 }, 6: { cellWidth: 18 } }
+  });
+
+  const fechaFile = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+  doc.save(`ML24_ListaEspera_${fechaFile}.pdf`);
+  closeExport();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -1107,10 +1578,13 @@ window.addEventListener('load', () => {
   });
 
   const saved = localStorage.getItem('ml24vendor');
-  if (saved) {
+  const savedLegajo = localStorage.getItem('ml24legajo');
+  if (saved && savedLegajo) {
     currentVendor = saved;
+    currentLegajo = savedLegajo;
     document.getElementById('lockScreen').style.display = 'none';
     document.getElementById('vendorNameTag').textContent = saved;
+    switchTab('home');
   } else {
     document.getElementById('lockScreen').style.display = 'flex';
   }
