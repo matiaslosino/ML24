@@ -206,7 +206,14 @@
     border-left: 4px solid var(--pink-dark);
     position: relative;
   }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideDownToast {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes slideUpBanner {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  } from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
   .wait-item.arrived {
     border-color: rgba(37,211,102,0.25);
     border-left: 4px solid #1a8a40;
@@ -470,6 +477,40 @@
     <div class="dropdown" id="headerMenu"></div>
   </div>
 </header>
+
+<!-- TOAST -->
+<div id="toastBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;animation:slideDownToast 0.4s ease">
+  <div style="background:linear-gradient(135deg,#1f6b3a,#145227);border-bottom:2px solid #25D366;padding:13px 20px;display:flex;align-items:center;gap:12px">
+    <span id="toastIcon" style="font-size:1.3rem">✅</span>
+    <div>
+      <strong id="toastTitle" style="display:block;font-size:0.88rem;color:#fff;font-weight:600"></strong>
+      <span id="toastSub" style="font-size:0.7rem;color:rgba(255,255,255,0.7)"></span>
+    </div>
+  </div>
+</div>
+
+<!-- BANNER INSTALAR APP -->
+<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;animation:slideUpBanner 0.4s ease">
+  <div style="background:#221520;border-top:2px solid var(--pink-dark);padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 -4px 24px rgba(0,0,0,0.4)">
+    <svg width="36" height="36" viewBox="0 0 52 52" fill="none" style="flex-shrink:0">
+      <rect width="52" height="52" rx="10" fill="#1A1018"/>
+      <rect x="16" y="20" width="20" height="26" rx="4" fill="none" stroke="#C4607A" stroke-width="1.5"/>
+      <rect x="21" y="14" width="10" height="8" rx="2" fill="none" stroke="#C4607A" stroke-width="1.5"/>
+      <rect x="23" y="10" width="6" height="5" rx="1.5" fill="#C4607A" opacity=".5"/>
+      <line x1="26" y1="10" x2="26" y2="7" stroke="#C4607A" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="26" cy="6" r="2" fill="#C4607A"/>
+      <line x1="20" y1="26" x2="20" y2="34" stroke="#E8A0B0" stroke-width="1" opacity=".4" stroke-linecap="round"/>
+    </svg>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:0.85rem;font-weight:600;color:var(--pink-light);margin-bottom:2px">Instalá ML24 como app</div>
+      <div id="installInstructions" style="font-size:0.68rem;color:var(--soft);line-height:1.4"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+      <button id="installBtn" style="display:none;background:var(--pink-dark);color:white;border:none;padding:8px 14px;border-radius:8px;font-family:'Jost',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap">Instalar</button>
+      <button onclick="dismissInstallBanner()" style="background:transparent;color:var(--soft);border:1px solid rgba(232,160,176,0.2);padding:7px 14px;border-radius:8px;font-family:'Jost',sans-serif;font-size:0.68rem;cursor:pointer;white-space:nowrap">Ahora no</button>
+    </div>
+  </div>
+</div>
 <div class="tabs">
   <div class="tab active" onclick="switchTab('home')" id="tab-home">🏠 Inicio</div>
   <div class="tab" onclick="switchTab('nueva')" id="tab-nueva">➕ Nueva</div>
@@ -761,6 +802,7 @@ function loginAsAdmin(fullName) {
   document.getElementById('vendorNameTag').textContent = fullName;
   document.getElementById('adminBadge').style.display = 'inline';
   switchTab('home');
+  setTimeout(showInstallBanner, 2000);
 }
 
 function tryLogin() {
@@ -786,6 +828,7 @@ function tryLogin() {
   document.getElementById('vendorNameTag').textContent = fullName;
   document.getElementById('adminBadge').style.display = 'none';
   switchTab('home');
+  setTimeout(showInstallBanner, 2000);
 }
 
 function logout() {
@@ -1096,7 +1139,8 @@ function renderLlegaronTab(items) {
       const prodStr = prods.map(p => `${p.brand} ${p.product}`).join(' ').toLowerCase();
       return prodStr.includes(q) || i.name.toLowerCase().includes(q) ||
         (i.lastname||'').toLowerCase().includes(q) || i.phone.includes(q) ||
-        (i.brand||'').toLowerCase().includes(q);
+        (i.brand||'').toLowerCase().includes(q) || (i.dni||'').includes(q) ||
+        (i.vendor||'').toLowerCase().includes(q);
     });
   }
 
@@ -1124,7 +1168,7 @@ function renderLlegaronTab(items) {
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
       <div class="search-wrap" style="flex:1;margin-bottom:0">
         <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Buscar por producto, cliente..." value="${searchLlegaron}" oninput="updateSearchLlegaron(this.value)" />
+        <input type="text" placeholder="Buscar por producto, cliente, DNI..." value="${searchLlegaron}" oninput="updateSearchLlegaron(this.value)" />
       </div>
       <button class="btn-filter ${hasFilters ? 'has-filters' : ''}" onclick="openFiltersL()">
         ⚙️ Filtros${hasFilters ? '<span class=\'filter-active-dot\'></span>' : ''}
@@ -1248,6 +1292,20 @@ function resetProductRows() {
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(title, sub = '', icon = '✅') {
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastSub').textContent = sub;
+  const bar = document.getElementById('toastBar');
+  bar.style.display = 'block';
+  bar.style.animation = 'none';
+  bar.offsetHeight; // reflow
+  bar.style.animation = 'slideDownToast 0.4s ease';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { bar.style.display = 'none'; }, 3500);
+}
+
 // ─── HISTORIAL ────────────────────────────────────────────────────────────────
 function logHistory(itemId, action, detail = '') {
   const entry = {
@@ -1317,6 +1375,8 @@ function addItem() {
   logHistory(newId, 'Creado', prodStr);
   resetProductRows();
   ['f-name','f-lastname','f-phone','f-email','f-dni','f-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  const clientName = [name, document.getElementById('f-lastname') ? document.getElementById('f-lastname').value.trim() : ''].filter(Boolean).join(' ');
+  showToast('¡Pedido agregado!', `${prodStr}${name ? ' · ' + name : ''}`);
   switchTab('lista');
 }
 
@@ -2122,6 +2182,57 @@ function exportPDF() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+// ─── PWA INSTALL BANNER ───────────────────────────────────────────────────────
+let deferredInstallPrompt = null;
+
+function dismissInstallBanner() {
+  document.getElementById('installBanner').style.display = 'none';
+  localStorage.setItem('ml24installDismissed', Date.now());
+}
+
+function showInstallBanner() {
+  // No mostrar si ya se descartó en los últimos 7 días
+  const dismissed = localStorage.getItem('ml24installDismissed');
+  if (dismissed && Date.now() - dismissed < 7 * 24 * 60 * 60 * 1000) return;
+  // No mostrar si ya está instalada como PWA
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+
+  if (!isIOS && !isAndroid) return; // solo mostrar en celulares
+
+  const banner = document.getElementById('installBanner');
+  const instructions = document.getElementById('installInstructions');
+  const installBtn = document.getElementById('installBtn');
+
+  if (isIOS) {
+    instructions.innerHTML = `Tocá <strong style="color:var(--pink-light)">Compartir</strong> <span style="font-size:0.9rem">⎋</span> y luego <strong style="color:var(--pink-light)">"Agregar a pantalla de inicio"</strong>`;
+  } else if (isAndroid && deferredInstallPrompt) {
+    instructions.textContent = 'Agregá ML24 a tu pantalla de inicio para usarla como app.';
+    installBtn.style.display = 'block';
+    installBtn.onclick = async () => {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        localStorage.setItem('ml24installDismissed', Date.now());
+      }
+      deferredInstallPrompt = null;
+      banner.style.display = 'none';
+    };
+  } else if (isAndroid) {
+    instructions.textContent = 'Tocá el menú ⋮ del navegador y elegí "Agregar a pantalla de inicio".';
+  }
+
+  banner.style.display = 'block';
+}
+
+// Capturar evento de instalación en Android
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
 window.addEventListener('load', () => {
   document.getElementById('loginBtn').addEventListener('click', tryLogin);
   document.getElementById('lockLastName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
@@ -2146,6 +2257,7 @@ window.addEventListener('load', () => {
     document.getElementById('vendorNameTag').textContent = saved;
     if (isAdmin) document.getElementById('adminBadge').style.display = 'inline';
     switchTab('home');
+    setTimeout(showInstallBanner, 2500);
   } else {
     document.getElementById('lockScreen').style.display = 'flex';
   }
