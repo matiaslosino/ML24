@@ -296,10 +296,12 @@
     border-radius: 50%; margin-left: 5px; vertical-align: middle;
   }
   .btn-filter {
-    font-size: 0.65rem; color: var(--soft); background: transparent;
-    border: 1px solid rgba(232,160,176,0.3); padding: 5px 10px;
+    font-size:0.78rem;
+    color: var(--soft); background: transparent;
+    border: 1px solid rgba(232,160,176,0.3); padding: 8px 14px;
     border-radius: 20px; cursor: pointer; transition: all 0.2s;
-    display: flex; align-items: center; gap: 4px;
+    display: flex; align-items: center; gap: 5px;
+    font-weight: 600;
   }
   .btn-filter:hover { border-color: var(--border); color: var(--pink-dark); }
   .btn-filter.has-filters { color: var(--pink-dark); border-color: var(--pink-dark); }
@@ -415,7 +417,7 @@
 <div class="tabs">
   <div class="tab active" onclick="switchTab('home')" id="tab-home">🏠 Inicio</div>
   <div class="tab" onclick="switchTab('nueva')" id="tab-nueva">➕ Nueva</div>
-  <div class="tab" onclick="switchTab('lista')" id="tab-lista">📋 Lista <span id="pendingBadge"></span></div>
+  <div class="tab" onclick="switchTab('lista')" id="tab-lista">📋 Lista de espera <span id="pendingBadge"></span></div>
   <div class="tab" onclick="switchTab('llegaron')" id="tab-llegaron">✅ Llegaron</div>
 </div>
 <main id="mainContent"></main>
@@ -967,6 +969,10 @@ function renderItem(item, arrived) {
   const phone = (item.phone||'').replace(/\D/g,'');
   const fullName = [item.name, item.lastname].filter(Boolean).join(' ');
 
+  const diasEspera = Math.floor((Date.now() - item.ts) / (1000 * 60 * 60 * 24));
+  const diasLabel = diasEspera === 0 ? 'Hoy' : diasEspera === 1 ? 'hace 1 día' : `hace ${diasEspera} días`;
+  const diasColor = diasEspera >= 30 ? '#c0392b' : diasEspera >= 14 ? '#b8720a' : 'var(--soft)';
+
   const products = item.products || [{ brand: item.brand || '', product: item.product || '' }];
   const multiProduct = products.length > 1;
   const waMsg = encodeURIComponent(`Hola ${fullName}! Te avisamos que el/los producto(s) que reservaste ya llegaron: *${products.map(p=>[p.brand,p.product].filter(Boolean).join(' ')).join(', ')}*. ¡Pasá cuando quieras!`);
@@ -993,6 +999,7 @@ function renderItem(item, arrived) {
         <span class="meta-chip">📱 ${item.phone}</span>
         ${item.email ? `<span class="meta-chip">✉️ ${item.email}</span>` : ''}
         <span class="meta-chip">📅 Creado: ${date}</span>
+        ${!arrived ? `<span class="meta-chip" style="color:${diasColor};font-weight:600;background:${diasEspera>=30?'rgba(192,57,43,0.08)':diasEspera>=14?'rgba(184,114,10,0.08)':'rgba(61,37,48,0.08)'}">⏱ ${diasLabel}</span>` : ''}
         ${arrived ? `<span class="arrived-badge">✅ Llegó</span>` : ''}
       </div>
       ${item.notes ? `<div style="font-size:0.8rem;color:var(--soft);margin-bottom:8px;font-style:italic;">"${item.notes}"</div>` : ''}
@@ -1532,7 +1539,30 @@ function openStats() {
   });
   html += `</div>`;
 
+  // 4. Días de espera
+  const pendingItems = items.filter(i => !i.arrived);
+  if (pendingItems.length > 0) {
+    const dias = pendingItems.map(i => Math.floor((Date.now() - i.ts) / (1000 * 60 * 60 * 24)));
+    const promedio = Math.round(dias.reduce((a,b) => a+b, 0) / dias.length);
+    const maximo = Math.max(...dias);
+    const masAntiguo = pendingItems.find(i => Math.floor((Date.now() - i.ts) / (1000 * 60 * 60 * 24)) === maximo);
+    const masAntiguoNombre = masAntiguo ? [masAntiguo.name, masAntiguo.lastname].filter(Boolean).join(' ') : '';
 
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Tiempo de Espera</div>
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <div style="flex:1;background:rgba(232,160,176,0.08);border:1px solid var(--border);border-left:4px solid var(--pink-dark);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--pink-dark)">${promedio}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Días promedio</div>
+        </div>
+        <div style="flex:1;background:${maximo>=30?'rgba(192,57,43,0.08)':maximo>=14?'rgba(184,114,10,0.08)':'rgba(232,160,176,0.08)'};border:1px solid var(--border);border-left:4px solid ${maximo>=30?'#c0392b':maximo>=14?'#b8720a':'var(--pink-dark)'};border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:1.8rem;font-weight:700;color:${maximo>=30?'#c0392b':maximo>=14?'#b8720a':'var(--pink-dark)'}">${maximo}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Días máximo</div>
+        </div>
+      </div>
+      ${maximo > 0 ? `<div style="font-size:0.78rem;color:var(--mid);font-weight:500">⚠️ Pedido más antiguo: <strong>${masAntiguoNombre}</strong> (${maximo} días)</div>` : ''}
+    </div>`;
+  }
 
   document.getElementById('statsContent').innerHTML = html;
   document.getElementById('statsOverlay').classList.add('open');
