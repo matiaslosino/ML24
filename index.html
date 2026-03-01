@@ -967,16 +967,19 @@ function renderItem(item, arrived) {
   const phone = (item.phone||'').replace(/\D/g,'');
   const fullName = [item.name, item.lastname].filter(Boolean).join(' ');
 
-  // Compatibilidad: registros viejos tienen brand/product, nuevos tienen products[]
   const products = item.products || [{ brand: item.brand || '', product: item.product || '' }];
-  const firstProduct = products[0]?.product || '';
+  const multiProduct = products.length > 1;
   const waMsg = encodeURIComponent(`Hola ${fullName}! Te avisamos que el/los producto(s) que reservaste ya llegaron: *${products.map(p=>[p.brand,p.product].filter(Boolean).join(' ')).join(', ')}*. ¡Pasá cuando quieras!`);
   const waLink = `https://wa.me/549${phone}?text=${waMsg}`;
 
-  const productsHtml = products.map(p => `
-    <div class="item-product">
-      ${p.brand ? `<span style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--pink-dark);font-family:'Jost',sans-serif;display:block;margin-bottom:2px">${p.brand}</span>` : ''}
-      ${p.product}
+  // Si tiene múltiples productos y no llegó aún, mostrar botón por producto
+  const productsHtml = products.map((p, idx) => `
+    <div class="item-product" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div>
+        ${p.brand ? `<span style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--pink-dark);font-family:'Jost',sans-serif;display:block;margin-bottom:2px">${p.brand}</span>` : ''}
+        ${p.product}
+      </div>
+      ${multiProduct && !arrived ? `<button class="btn-sm btn-arrived" style="white-space:nowrap;flex-shrink:0;font-size:0.6rem;padding:4px 8px" onclick="markArrivedProduct('${item.id}', ${idx})">Llegó ✓</button>` : ''}
     </div>`).join('');
 
   return `
@@ -994,7 +997,9 @@ function renderItem(item, arrived) {
       </div>
       ${item.notes ? `<div style="font-size:0.8rem;color:var(--soft);margin-bottom:8px;font-style:italic;">"${item.notes}"</div>` : ''}
       <div class="item-actions">
-        ${!arrived ? `<button class="btn-sm btn-arrived" onclick="markArrived('${item.id}')">Llegó ✓</button>` : `<button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border)" onclick="unmarkArrived('${item.id}')">↩ Cancelar llegada</button>`}
+        ${!arrived
+          ? `<button class="btn-sm btn-arrived" onclick="markArrived('${item.id}')">${multiProduct ? 'Llegaron todos ✓' : 'Llegó ✓'}</button>`
+          : `<button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border)" onclick="unmarkArrived('${item.id}')">↩ Cancelar llegada</button>`}
         <a href="${waLink}" target="_blank" class="btn-sm btn-whatsapp">💬 WhatsApp</a>
         <button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border);max-width:40px" onclick="openEditItem('${item.id}')" title="Editar">✏️</button>
         <button class="btn-sm btn-delete" onclick="deleteItem('${item.id}')" title="Eliminar">🗑</button>
@@ -1080,6 +1085,41 @@ function markArrived(id) {
   const items = loadItems();
   const item = items.find(i => i.id === id);
   if (item) { item.arrived = true; item.arrivedTs = Date.now(); saveItems(items); render(); }
+}
+
+function markArrivedProduct(id, productIdx) {
+  if (!confirm('¿Confirmar que este producto llegó? Se va a separar del pedido original.')) return;
+  const items = loadItems();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+
+  const products = item.products || [{ brand: item.brand||'', product: item.product||'' }];
+  const arrivedProduct = products[productIdx];
+
+  // Crear nuevo pedido solo con el producto que llegó
+  const newItem = {
+    ...item,
+    id: Date.now().toString(),
+    products: [arrivedProduct],
+    arrived: true,
+    arrivedTs: Date.now()
+  };
+
+  // Quitar ese producto del pedido original
+  const remaining = products.filter((_, i) => i !== productIdx);
+
+  if (remaining.length === 0) {
+    // Era el último producto — marcar el pedido completo como llegado
+    item.arrived = true;
+    item.arrivedTs = Date.now();
+  } else {
+    // Actualizar el pedido original con los productos restantes
+    item.products = remaining;
+    items.push(newItem);
+  }
+
+  saveItems(items);
+  render();
 }
 
 function unmarkArrived(id) {
