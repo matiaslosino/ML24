@@ -377,7 +377,9 @@
 <div id="lockScreen">
   <div class="lock-logo">ML24</div>
   <div class="lock-sub">Lista de Espera · Vendedores</div>
-  <div class="lock-card">
+
+  <!-- PANEL VENDEDOR -->
+  <div class="lock-card" id="lockVendor">
     <div class="lock-title">Identificate</div>
     <div class="lock-sub2">Ingresá tus datos</div>
     <div class="field">
@@ -394,6 +396,32 @@
     </div>
     <div class="lock-error" id="lockError"></div>
     <button class="lock-btn" id="loginBtn">Ingresar</button>
+    <div style="text-align:center;margin-top:16px">
+      <span style="font-size:0.65rem;color:rgba(232,160,176,0.4);letter-spacing:0.15em;cursor:pointer;text-transform:uppercase" onclick="toggleAdminPanel()">Acceso administrador</span>
+    </div>
+  </div>
+
+  <!-- PANEL ADMIN -->
+  <div class="lock-card" id="lockAdmin" style="display:none">
+    <div class="lock-title">Administrador</div>
+    <div class="lock-sub2">Ingresá la contraseña maestra</div>
+    <div class="field">
+      <label style="color:var(--soft)">Nombre</label>
+      <input type="text" id="adminFirstName" placeholder="Ej: María" onkeydown="if(event.key==='Enter')document.getElementById('adminLastName').focus()" />
+    </div>
+    <div class="field">
+      <label style="color:var(--soft)">Apellido</label>
+      <input type="text" id="adminLastName" placeholder="Ej: González" onkeydown="if(event.key==='Enter')document.getElementById('adminPassword').focus()" />
+    </div>
+    <div class="field">
+      <label style="color:var(--soft)">Contraseña</label>
+      <input type="password" id="adminPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryAdminLogin()" />
+    </div>
+    <div class="lock-error" id="adminError"></div>
+    <button class="lock-btn" onclick="tryAdminLogin()">Ingresar como Admin</button>
+    <div style="text-align:center;margin-top:16px">
+      <span style="font-size:0.65rem;color:rgba(232,160,176,0.4);letter-spacing:0.15em;cursor:pointer;text-transform:uppercase" onclick="toggleAdminPanel()">← Volver</span>
+    </div>
   </div>
 </div>
 
@@ -404,14 +432,10 @@
     <span>Lista de Espera</span>
   </div>
   <div class="header-right">
-    <div class="vendor-tag">👤 <span id="vendorNameTag">—</span></div>
+    <div class="vendor-tag">👤 <span id="vendorNameTag">—</span> <span id="adminBadge" style="display:none;background:var(--pink-dark);color:white;font-size:0.55rem;padding:2px 6px;border-radius:10px;letter-spacing:0.1em;margin-left:4px">ADMIN</span></div>
     <div class="logout-btn" onclick="logout()">Salir</div>
     <div class="menu-btn" onclick="toggleMenu()">⋯</div>
-    <div class="dropdown" id="headerMenu">
-      <div class="dropdown-item" onclick="openExport();toggleMenu()">⬇️ Exportar</div>
-      <div class="dropdown-item" onclick="openStats();toggleMenu()">📊 Stats</div>
-      <div class="dropdown-item" onclick="openMyOrders();toggleMenu()">📋 Mis pedidos</div>
-    </div>
+    <div class="dropdown" id="headerMenu"></div>
   </div>
 </header>
 <div class="tabs">
@@ -460,6 +484,42 @@
     <button class="btn" onclick="exportExcel()" style="margin-bottom:10px">📊 Descargar Excel (CSV)</button>
     <button class="btn" onclick="exportPDF()" style="background:transparent;color:var(--pink-dark);border-color:var(--pink-dark)">📄 Imprimir / Guardar PDF</button>
     <button class="btn ghost" onclick="closeExport()">Cancelar</button>
+  </div>
+</div>
+
+<!-- HISTORIAL MODAL -->
+<div class="overlay" id="historyOverlay">
+  <div class="modal" style="max-width:400px;max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-shrink:0">
+      <div class="modal-title">📋 Historial</div>
+      <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeHistory()">✕ Cerrar</div>
+    </div>
+    <div class="modal-sub">Registro de cambios del pedido</div>
+    <div style="overflow-y:auto;flex:1;margin-top:12px" id="historyContent"></div>
+  </div>
+</div>
+
+<!-- GESTIÓN VENDEDORES MODAL -->
+<div class="overlay" id="vendorsOverlay">
+  <div class="modal" style="max-width:420px;max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-shrink:0">
+      <div class="modal-title">⚙️ Gestión de Vendedores</div>
+      <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeVendors()">✕ Cerrar</div>
+    </div>
+    <div class="modal-sub">Vendedores activos en el sistema</div>
+    <div style="overflow-y:auto;flex:1;margin-top:12px" id="vendorsContent"></div>
+  </div>
+</div>
+
+<!-- PAPELERA MODAL -->
+<div class="overlay" id="trashOverlay">
+  <div class="modal" style="max-width:480px;max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-shrink:0">
+      <div class="modal-title">🗑 Papelera</div>
+      <div style="font-size:0.7rem;color:var(--soft);cursor:pointer" onclick="closeTrash()">✕ Cerrar</div>
+    </div>
+    <div class="modal-sub" id="trashSub">Pedidos eliminados · se borran definitivamente a los 30 días</div>
+    <div style="overflow-y:auto;flex:1;margin-top:12px" id="trashContent"></div>
   </div>
 </div>
 
@@ -574,6 +634,7 @@ const db = firebase.database();
 let currentTab = 'nueva';
 let currentVendor = '';   // nombre para mostrar
 let currentLegajo = '';   // identificador único
+let isAdmin = false;      // rol de administrador
 let searchQ = '';
 let searchLlegaron = '';
 let itemsCache = [];
@@ -599,6 +660,43 @@ function capitalize(str) {
   return str.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
 
+function toggleAdminPanel() {
+  const vendor = document.getElementById('lockVendor');
+  const admin = document.getElementById('lockAdmin');
+  if (vendor.style.display === 'none') {
+    vendor.style.display = 'block';
+    admin.style.display = 'none';
+  } else {
+    vendor.style.display = 'none';
+    admin.style.display = 'block';
+  }
+}
+
+function tryAdminLogin() {
+  const first = capitalize(document.getElementById('adminFirstName').value);
+  const last = capitalize(document.getElementById('adminLastName').value);
+  const password = document.getElementById('adminPassword').value;
+  if (!first || !last || !password) {
+    document.getElementById('adminError').textContent = 'Completá todos los campos.';
+    return;
+  }
+  if (password !== 'ADMIN_PASSWORD_HERE') {
+    document.getElementById('adminError').textContent = 'Contraseña incorrecta.';
+    return;
+  }
+  const fullName = first + ' ' + last;
+  currentVendor = fullName;
+  currentLegajo = 'ADMIN';
+  isAdmin = true;
+  localStorage.setItem('ml24vendor', fullName);
+  localStorage.setItem('ml24legajo', 'ADMIN');
+  localStorage.setItem('ml24isAdmin', 'true');
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('vendorNameTag').textContent = fullName;
+  document.getElementById('adminBadge').style.display = 'inline';
+  switchTab('home');
+}
+
 function tryLogin() {
   const first = capitalize(document.getElementById('lockFirstName').value);
   const last = capitalize(document.getElementById('lockLastName').value);
@@ -614,10 +712,13 @@ function tryLogin() {
   const fullName = first + ' ' + last;
   currentVendor = fullName;
   currentLegajo = legajo;
+  isAdmin = false;
   localStorage.setItem('ml24vendor', fullName);
   localStorage.setItem('ml24legajo', legajo);
+  localStorage.removeItem('ml24isAdmin');
   document.getElementById('lockScreen').style.display = 'none';
   document.getElementById('vendorNameTag').textContent = fullName;
+  document.getElementById('adminBadge').style.display = 'none';
   switchTab('home');
 }
 
@@ -625,13 +726,22 @@ function logout() {
   if (!confirm('¿Cerrar sesión?')) return;
   currentVendor = '';
   currentLegajo = '';
+  isAdmin = false;
   localStorage.removeItem('ml24vendor');
   localStorage.removeItem('ml24legajo');
+  localStorage.removeItem('ml24isAdmin');
   document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('lockVendor').style.display = 'block';
+  document.getElementById('lockAdmin').style.display = 'none';
   document.getElementById('lockFirstName').value = '';
   document.getElementById('lockLastName').value = '';
   document.getElementById('lockLegajo').value = '';
+  document.getElementById('adminFirstName').value = '';
+  document.getElementById('adminLastName').value = '';
+  document.getElementById('adminPassword').value = '';
   document.getElementById('lockError').textContent = '';
+  document.getElementById('adminError').textContent = '';
+  document.getElementById('adminBadge').style.display = 'none';
 }
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
@@ -970,8 +1080,8 @@ function renderItem(item, arrived) {
   const diasLabel = diasEspera === 0 ? 'Hoy' : diasEspera === 1 ? 'hace 1 día' : `hace ${diasEspera} días`;
   const diasColor = diasEspera >= 30 ? '#c0392b' : diasEspera >= 14 ? '#b8720a' : 'var(--soft)';
 
-  // Verificar si el pedido pertenece al vendedor logueado
-  const isOwner = item.legajo ? item.legajo === currentLegajo : item.vendor === currentVendor;
+  // Admin puede editar/eliminar cualquier pedido, vendedor solo los suyos
+  const isOwner = isAdmin || (item.legajo ? item.legajo === currentLegajo : item.vendor === currentVendor);
 
   const products = item.products || [{ brand: item.brand || '', product: item.product || '' }];
   const multiProduct = products.length > 1;
@@ -992,7 +1102,7 @@ function renderItem(item, arrived) {
     <div class="wait-item ${arrived ? 'arrived' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="flex:1">${productsHtml}</div>
-        <div style="font-size:0.65rem;letter-spacing:0.1em;color:var(--soft);text-transform:uppercase;white-space:nowrap;margin-left:8px;margin-top:2px">👤 ${item.vendor}</div>
+        <div style="font-size:0.65rem;letter-spacing:0.1em;color:var(--mid);text-transform:uppercase;white-space:nowrap;margin-left:8px;margin-top:2px;font-weight:600;background:rgba(61,37,48,0.08);padding:3px 8px;border-radius:10px">👤 ${item.vendor}</div>
       </div>
       <div class="item-client"><span style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--soft)">Cliente: </span><strong>${fullName}</strong>${item.dni ? ' · DNI ' + item.dni : ''}</div>
       <div class="item-meta">
@@ -1012,6 +1122,7 @@ function renderItem(item, arrived) {
         <button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border);max-width:40px" onclick="openEditItem('${item.id}')" title="Editar">✏️</button>
         <button class="btn-sm btn-delete" onclick="deleteItem('${item.id}')" title="Eliminar">🗑</button>
         ` : ''}
+        ${isAdmin ? `<button class="btn-sm" style="background:transparent;color:var(--soft);border-color:var(--border);max-width:40px" onclick="openHistory('${item.id}')" title="Historial">🕐</button>` : ''}
       </div>
     </div>`;
 }
@@ -1071,6 +1182,57 @@ function resetProductRows() {
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────
+// ─── HISTORIAL ────────────────────────────────────────────────────────────────
+function logHistory(itemId, action, detail = '') {
+  const entry = {
+    ts: Date.now(),
+    action,
+    detail,
+    by: currentVendor,
+    legajo: currentLegajo
+  };
+  db.ref(`ml24-history/${itemId}`).push(entry);
+}
+
+function openHistory(id) {
+  db.ref(`ml24-history/${id}`).once('value', snap => {
+    const raw = snap.val() || {};
+    const entries = Object.values(raw).sort((a,b) => b.ts - a.ts);
+
+    const icons = {
+      'Creado': '➕',
+      'Editado': '✏️',
+      'Llegó': '✅',
+      'Llegada cancelada': '↩',
+      'Eliminado': '🗑',
+      'Restaurado': '♻️',
+      'Producto llegó': '📦'
+    };
+
+    const html = entries.length === 0
+      ? `<div class="empty"><div class="empty-icon">📋</div>Sin historial aún</div>`
+      : entries.map(e => {
+          const fecha = new Date(e.ts).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+          const hora = new Date(e.ts).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+          return `
+            <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(232,160,176,0.12)">
+              <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px">${icons[e.action] || '•'}</div>
+              <div>
+                <div style="font-size:0.85rem;font-weight:600;color:var(--dark)">${e.action}${e.detail ? ` <span style="font-weight:400;color:var(--soft)">· ${e.detail}</span>` : ''}</div>
+                <div style="font-size:0.68rem;color:var(--soft);margin-top:2px">${e.by} · ${fecha} ${hora}</div>
+              </div>
+            </div>`;
+        }).join('');
+
+    document.getElementById('historyContent').innerHTML = html;
+    document.getElementById('historyOverlay').classList.add('open');
+  });
+}
+
+function closeHistory() {
+  document.getElementById('historyOverlay').classList.remove('open');
+}
+
 function addItem() {
   const products = getProducts();
   const validProducts = products.filter(p => p.product);
@@ -1082,8 +1244,11 @@ function addItem() {
   const notes = document.getElementById('f-notes').value.trim();
   if (validProducts.length === 0 || !name || !phone) { alert('Por favor completá al menos un producto, nombre y teléfono.'); return; }
   const items = loadItems();
-  items.push({ id: Date.now().toString(), products: validProducts, name, lastname, phone, email, dni, notes, vendor: currentVendor, legajo: currentLegajo, ts: Date.now(), arrived: false, arrivedTs: null });
+  const newId = Date.now().toString();
+  const prodStr = validProducts.map(p => [p.brand, p.product].filter(Boolean).join(' ')).join(', ');
+  items.push({ id: newId, products: validProducts, name, lastname, phone, email, dni, notes, vendor: currentVendor, legajo: currentLegajo, ts: Date.now(), arrived: false, arrivedTs: null });
   saveItems(items);
+  logHistory(newId, 'Creado', prodStr);
   resetProductRows();
   ['f-name','f-lastname','f-phone','f-email','f-dni','f-notes'].forEach(id => { document.getElementById(id).value = ''; });
   switchTab('lista');
@@ -1093,7 +1258,12 @@ function markArrived(id) {
   if (!confirm('¿Confirmar que el producto llegó?')) return;
   const items = loadItems();
   const item = items.find(i => i.id === id);
-  if (item) { item.arrived = true; item.arrivedTs = Date.now(); saveItems(items); render(); }
+  if (item) {
+    item.arrived = true; item.arrivedTs = Date.now();
+    saveItems(items);
+    logHistory(id, 'Llegó');
+    render();
+  }
 }
 
 function markArrivedProduct(id, productIdx) {
@@ -1104,28 +1274,29 @@ function markArrivedProduct(id, productIdx) {
 
   const products = item.products || [{ brand: item.brand||'', product: item.product||'' }];
   const arrivedProduct = products[productIdx];
+  const prodStr = [arrivedProduct.brand, arrivedProduct.product].filter(Boolean).join(' ');
 
-  // Crear nuevo pedido solo con el producto que llegó
+  const newId = Date.now().toString();
   const newItem = {
     ...item,
-    id: Date.now().toString(),
+    id: newId,
     products: [arrivedProduct],
     arrived: true,
     arrivedTs: Date.now(),
-    parentId: item.id  // referencia al pedido original
+    parentId: item.id
   };
 
-  // Quitar ese producto del pedido original
   const remaining = products.filter((_, i) => i !== productIdx);
 
   if (remaining.length === 0) {
-    // Era el último producto — marcar el pedido completo como llegado
     item.arrived = true;
     item.arrivedTs = Date.now();
+    logHistory(id, 'Llegó');
   } else {
-    // Actualizar el pedido original con los productos restantes
     item.products = remaining;
     items.push(newItem);
+    logHistory(id, 'Producto llegó', prodStr);
+    logHistory(newId, 'Creado', `Separado de pedido original · ${prodStr}`);
   }
 
   saveItems(items);
@@ -1137,33 +1308,179 @@ function unmarkArrived(id) {
   const item = items.find(i => i.id === id);
   if (!item) return;
 
-  // Si tiene parentId, intentar reintegrar al pedido original
   if (item.parentId) {
     const parent = items.find(i => i.id === item.parentId);
     if (parent) {
-      // El pedido original todavía existe — agregar el producto de vuelta
       parent.products = [...(parent.products || []), ...(item.products || [])];
-      // Eliminar el pedido separado
       const idx = items.findIndex(i => i.id === id);
       items.splice(idx, 1);
+      logHistory(item.parentId, 'Llegada cancelada', 'Producto reintegrado al pedido');
       saveItems(items);
       render();
       return;
     }
   }
 
-  // Sin parentId o pedido original eliminado — volver a pendiente normalmente
   item.arrived = false;
   item.arrivedTs = null;
+  logHistory(id, 'Llegada cancelada');
   saveItems(items);
   render();
 }
 
 function deleteItem(id) {
-  if (!confirm('¿Eliminar este registro?')) return;
+  if (!confirm('¿Mover este pedido a la papelera?')) return;
   const items = loadItems();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+
+  logHistory(id, 'Eliminado');
+  const trashedItem = { ...item, deletedAt: Date.now(), deletedBy: currentVendor };
+  db.ref('ml24-trash').child(id).set(trashedItem);
   saveItems(items.filter(i => i.id !== id));
+  updateTrashBadge();
   render();
+}
+
+// ─── PAPELERA ─────────────────────────────────────────────────────────────────
+function updateTrashBadge() {
+  db.ref('ml24-trash').once('value', snap => {
+    const trash = snap.val() || {};
+    const count = Object.keys(trash).length;
+    const badge = document.getElementById('trashBadge');
+    if (badge) badge.textContent = count > 0 ? `(${count})` : '';
+  });
+}
+
+function openTrash() {
+  db.ref('ml24-trash').once('value', snap => {
+    const trash = snap.val() || {};
+    const items = Object.values(trash);
+
+    // Limpiar automáticamente los que tienen más de 30 días
+    const now = Date.now();
+    const expired = items.filter(i => now - i.deletedAt > 30 * 24 * 60 * 60 * 1000);
+    expired.forEach(i => db.ref('ml24-trash').child(i.id).remove());
+    const active = items.filter(i => now - i.deletedAt <= 30 * 24 * 60 * 60 * 1000);
+
+    document.getElementById('trashSub').textContent = active.length === 0
+      ? 'La papelera está vacía'
+      : `${active.length} pedido${active.length !== 1 ? 's' : ''} eliminado${active.length !== 1 ? 's' : ''} · se borran a los 30 días`;
+
+    if (active.length === 0) {
+      document.getElementById('trashContent').innerHTML = `<div class="empty"><div class="empty-icon">🗑</div>La papelera está vacía</div>`;
+    } else {
+      active.sort((a,b) => b.deletedAt - a.deletedAt);
+      document.getElementById('trashContent').innerHTML = active.map(item => {
+        const prods = item.products || [{ brand: item.brand||'', product: item.product||'' }];
+        const prodText = prods.map(p => [p.brand, p.product].filter(Boolean).join(' ')).join(', ');
+        const fullName = [item.name, item.lastname].filter(Boolean).join(' ');
+        const deletedDate = new Date(item.deletedAt).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+        const diasRestantes = 30 - Math.floor((Date.now() - item.deletedAt) / (1000 * 60 * 60 * 24));
+        const isOwner = isAdmin || (item.legajo ? item.legajo === currentLegajo : item.vendor === currentVendor);
+        return `
+          <div style="padding:14px 0;border-bottom:1px solid rgba(232,160,176,0.15)">
+            <div style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--pink-dark);font-weight:700;margin-bottom:2px">${prods[0]?.brand || ''}</div>
+            <div style="font-size:0.95rem;color:var(--dark);font-weight:600;margin-bottom:4px">${prodText}</div>
+            <div style="font-size:0.8rem;color:var(--mid);margin-bottom:4px">${fullName} · 📱 ${item.phone}</div>
+            <div style="font-size:0.65rem;color:var(--soft);margin-bottom:10px">
+              Eliminado el ${deletedDate} por ${item.deletedBy} · 
+              <span style="color:${diasRestantes<=5?'#c0392b':'var(--soft)'}">borra en ${diasRestantes} día${diasRestantes!==1?'s':''}</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              ${isOwner ? `<button class="btn" style="padding:7px 14px;font-size:0.7rem" onclick="restoreItem('${item.id}')">↩ Restaurar</button>` : ''}
+              ${isOwner ? `<button class="btn danger" style="padding:7px 14px;font-size:0.7rem" onclick="deleteForever('${item.id}')">🗑 Borrar definitivamente</button>` : ''}
+              ${!isOwner ? `<span style="font-size:0.7rem;color:var(--soft);font-style:italic">Pedido de ${item.vendor}</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+    document.getElementById('trashOverlay').classList.add('open');
+  });
+}
+
+function closeTrash() {
+  document.getElementById('trashOverlay').classList.remove('open');
+}
+
+function restoreItem(id) {
+  db.ref('ml24-trash').child(id).once('value', snap => {
+    const item = snap.val();
+    if (!item) return;
+    const { deletedAt, deletedBy, ...restored } = item;
+    const items = loadItems();
+    items.push(restored);
+    saveItems(items);
+    logHistory(id, 'Restaurado');
+    db.ref('ml24-trash').child(id).remove();
+    updateTrashBadge();
+    closeTrash();
+    render();
+  });
+}
+
+function deleteForever(id) {
+  if (!confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.')) return;
+  db.ref('ml24-trash').child(id).remove();
+  updateTrashBadge();
+  openTrash(); // refrescar la papelera
+}
+
+// ─── GESTIÓN VENDEDORES (ADMIN) ───────────────────────────────────────────────
+function openVendors() {
+  if (!isAdmin) return;
+  const items = loadItems();
+  const vendorMap = {};
+  items.forEach(i => {
+    if (!i.vendor) return;
+    const key = i.legajo || i.vendor;
+    if (!vendorMap[key]) vendorMap[key] = { name: i.vendor, legajo: i.legajo || '—', total: 0, pending: 0 };
+    vendorMap[key].total++;
+    if (!i.arrived) vendorMap[key].pending++;
+  });
+
+  db.ref('ml24-vendors-disabled').once('value', snap => {
+    const disabled = snap.val() || {};
+    const vendors = Object.values(vendorMap);
+
+    if (vendors.length === 0) {
+      document.getElementById('vendorsContent').innerHTML = `<div class="empty"><div class="empty-icon">👤</div>No hay vendedores registrados aún</div>`;
+    } else {
+      document.getElementById('vendorsContent').innerHTML = vendors
+        .sort((a,b) => a.name.localeCompare(b.name))
+        .map(v => {
+          const isDisabled = !!disabled[v.legajo];
+          return `
+            <div style="padding:14px 0;border-bottom:1px solid rgba(232,160,176,0.15);display:flex;justify-content:space-between;align-items:center;gap:12px">
+              <div>
+                <div style="font-size:0.9rem;font-weight:600;color:${isDisabled?'var(--soft)':'var(--dark)'}">
+                  ${v.name} ${isDisabled?'<span style="font-size:0.6rem;color:#c0392b;background:rgba(192,57,43,0.1);padding:2px 6px;border-radius:8px;margin-left:4px">INACTIVO</span>':''}
+                </div>
+                <div style="font-size:0.7rem;color:var(--soft);margin-top:2px">Legajo #${v.legajo} · ${v.total} pedido${v.total!==1?'s':''} · ${v.pending} pendiente${v.pending!==1?'s':''}</div>
+              </div>
+              <button class="btn ${isDisabled?'':'danger'}" style="padding:6px 12px;font-size:0.65rem;white-space:nowrap;flex-shrink:0" onclick="toggleVendor('${v.legajo}', ${isDisabled})">
+                ${isDisabled ? '✓ Activar' : '✕ Desactivar'}
+              </button>
+            </div>`;
+        }).join('');
+    }
+    document.getElementById('vendorsOverlay').classList.add('open');
+  });
+}
+
+function closeVendors() {
+  document.getElementById('vendorsOverlay').classList.remove('open');
+}
+
+function toggleVendor(legajo, currentlyDisabled) {
+  const action = currentlyDisabled ? 'activar' : 'desactivar';
+  if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} este vendedor?`)) return;
+  if (currentlyDisabled) {
+    db.ref('ml24-vendors-disabled').child(legajo).remove();
+  } else {
+    db.ref('ml24-vendors-disabled').child(legajo).set(true);
+  }
+  setTimeout(() => openVendors(), 400);
 }
 
 function updateSearch(val) {
@@ -1269,6 +1586,7 @@ function saveEditItem() {
     notes: document.getElementById('edit-notes').value.trim(),
   };
   saveItems(items);
+  logHistory(editingId, 'Editado');
   closeEditItem();
   render();
 }
@@ -1576,7 +1894,20 @@ function closeStats() {
 
 // ─── MENÚ ─────────────────────────────────────────────────────────────────────
 function toggleMenu() {
-  document.getElementById('headerMenu').classList.toggle('open');
+  const menu = document.getElementById('headerMenu');
+  if (menu.classList.contains('open')) {
+    menu.classList.remove('open');
+    return;
+  }
+  menu.innerHTML = `
+    ${isAdmin ? `<div class="dropdown-item" onclick="openExport();toggleMenu()">⬇️ Exportar</div>` : ''}
+    <div class="dropdown-item" onclick="openStats();toggleMenu()">📊 Stats</div>
+    <div class="dropdown-item" onclick="openMyOrders();toggleMenu()">📋 Mis pedidos</div>
+    <div class="dropdown-item" onclick="openTrash();toggleMenu()">🗑 Papelera <span id="trashBadge"></span></div>
+    ${isAdmin ? `<div class="dropdown-item" style="border-top:1px solid rgba(232,160,176,0.15);color:var(--pink-dark)" onclick="openVendors();toggleMenu()">⚙️ Gestión vendedores</div>` : ''}
+  `;
+  updateTrashBadge();
+  menu.classList.add('open');
 }
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('headerMenu');
@@ -1705,13 +2036,18 @@ window.addEventListener('load', () => {
     if (currentVendor) render();
   });
 
+  updateTrashBadge();
+
   const saved = localStorage.getItem('ml24vendor');
   const savedLegajo = localStorage.getItem('ml24legajo');
+  const savedAdmin = localStorage.getItem('ml24isAdmin');
   if (saved && savedLegajo) {
     currentVendor = saved;
     currentLegajo = savedLegajo;
+    isAdmin = savedAdmin === 'true';
     document.getElementById('lockScreen').style.display = 'none';
     document.getElementById('vendorNameTag').textContent = saved;
+    if (isAdmin) document.getElementById('adminBadge').style.display = 'inline';
     switchTab('home');
   } else {
     document.getElementById('lockScreen').style.display = 'flex';
