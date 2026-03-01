@@ -1102,7 +1102,8 @@ function markArrivedProduct(id, productIdx) {
     id: Date.now().toString(),
     products: [arrivedProduct],
     arrived: true,
-    arrivedTs: Date.now()
+    arrivedTs: Date.now(),
+    parentId: item.id  // referencia al pedido original
   };
 
   // Quitar ese producto del pedido original
@@ -1125,7 +1126,28 @@ function markArrivedProduct(id, productIdx) {
 function unmarkArrived(id) {
   const items = loadItems();
   const item = items.find(i => i.id === id);
-  if (item) { item.arrived = false; item.arrivedTs = null; saveItems(items); render(); }
+  if (!item) return;
+
+  // Si tiene parentId, intentar reintegrar al pedido original
+  if (item.parentId) {
+    const parent = items.find(i => i.id === item.parentId);
+    if (parent) {
+      // El pedido original todavía existe — agregar el producto de vuelta
+      parent.products = [...(parent.products || []), ...(item.products || [])];
+      // Eliminar el pedido separado
+      const idx = items.findIndex(i => i.id === id);
+      items.splice(idx, 1);
+      saveItems(items);
+      render();
+      return;
+    }
+  }
+
+  // Sin parentId o pedido original eliminado — volver a pendiente normalmente
+  item.arrived = false;
+  item.arrivedTs = null;
+  saveItems(items);
+  render();
 }
 
 function deleteItem(id) {
