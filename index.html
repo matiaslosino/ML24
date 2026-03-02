@@ -898,38 +898,33 @@ function renderHomeTab(items) {
   const firstName = currentVendor.split(' ')[0];
 
   return `
-    <div style="min-height:100vh;margin:-16px;padding:24px 16px 32px;position:relative;overflow:hidden;
-      background: #120810;
-      background-image:
-        radial-gradient(ellipse at 20% 15%, rgba(139,58,82,0.35) 0%, transparent 55%),
-        radial-gradient(ellipse at 80% 75%, rgba(196,96,122,0.25) 0%, transparent 55%),
-        radial-gradient(ellipse at 55% 45%, rgba(61,10,30,0.45) 0%, transparent 65%);">
+    <div style="padding: 8px 0 24px">
 
       <!-- Saludo -->
       <div style="margin-bottom:28px;text-align:center">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:#F5CDD6;line-height:1.2">${greeting},</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:#E8A0B0;line-height:1.2">${firstName} ✦</div>
-        <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(232,160,176,0.5);margin-top:8px">Legajo #${currentLegajo}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dark);line-height:1.2">${greeting},</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:var(--pink-dark);line-height:1.2">${firstName} ✦</div>
+        <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--soft);margin-top:8px">Legajo #${currentLegajo}</div>
       </div>
 
       <!-- Resumen general -->
-      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(232,160,176,0.6);font-weight:600;margin-bottom:12px">Resumen general</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-        <div style="background:rgba(196,96,122,0.15);border:1px solid rgba(196,96,122,0.3);border-left:4px solid var(--pink-dark);border-radius:12px;padding:16px;backdrop-filter:blur(8px)">
-          <div style="font-size:2rem;font-weight:700;color:#F5CDD6">${pending}</div>
-          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(232,160,176,0.7);margin-top:2px">Pendientes</div>
+      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Resumen general</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px">
+        <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--pink-dark);border-radius:12px;padding:16px">
+          <div style="font-size:2rem;font-weight:700;color:var(--dark)">${pending}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Pendientes</div>
         </div>
-        <div style="background:rgba(26,138,64,0.12);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:12px;padding:16px;backdrop-filter:blur(8px)">
-          <div style="font-size:2rem;font-weight:700;color:#F5CDD6">${arrived}</div>
-          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(232,160,176,0.7);margin-top:2px">Llegaron</div>
+        <div style="background:var(--card);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:12px;padding:16px">
+          <div style="font-size:2rem;font-weight:700;color:var(--dark)">${arrived}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Llegaron</div>
         </div>
       </div>
 
       <!-- Mis pedidos resumen -->
-      <div style="background:rgba(30,8,20,0.6);border:1px solid rgba(196,96,122,0.2);border-radius:12px;padding:16px;margin-bottom:24px;backdrop-filter:blur(10px)">
-        <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(232,160,176,0.6);font-weight:600;margin-bottom:6px">Tus pedidos</div>
-        <div style="font-size:0.9rem;color:#F5CDD6;font-weight:500;margin-bottom:12px">
-          Tenés <strong style="color:#E8A0B0">${myPending}</strong> pedido${myPending !== 1 ? 's' : ''} pendiente${myPending !== 1 ? 's' : ''} a tu nombre.
+      <div style="background:rgba(232,160,176,0.08);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:28px">
+        <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:6px">Tus pedidos</div>
+        <div style="font-size:0.9rem;color:var(--dark);font-weight:500;margin-bottom:12px">
+          Tenés <strong style="color:var(--pink-dark)">${myPending}</strong> pedido${myPending !== 1 ? 's' : ''} pendiente${myPending !== 1 ? 's' : ''} a tu nombre.
         </div>
         <button onclick="openMyOrders()" style="background:var(--pink-dark);color:white;border:none;border-radius:8px;padding:10px 18px;font-family:'Jost',sans-serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-weight:600;width:100%">
           📋 Ver mis pedidos
@@ -937,16 +932,16 @@ function renderHomeTab(items) {
       </div>
 
       <!-- Accesos rápidos -->
-      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(232,160,176,0.6);font-weight:600;margin-bottom:12px">Acceso rápido</div>
+      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Acceso rápido</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button onclick="switchTab('nueva')" style="background:rgba(196,96,122,0.2);color:#F5CDD6;border:1px solid rgba(196,96,122,0.4);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600;backdrop-filter:blur(8px)">
+        <button onclick="switchTab('nueva')" style="background:var(--dark);color:var(--pink-light);border:1px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
           ➕ Nuevo pedido
         </button>
-        <button onclick="switchTab('lista')" style="background:rgba(30,8,20,0.5);color:#F5CDD6;border:1px solid rgba(196,96,122,0.2);border-left:4px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600;backdrop-filter:blur(8px)">
-          📋 Ver lista de espera <span style="color:#E8A0B0">(${pending})</span>
+        <button onclick="switchTab('lista')" style="background:var(--card);color:var(--dark);border:1px solid var(--border);border-left:4px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+          📋 Ver lista de espera <span style="color:var(--pink-dark)">(${pending})</span>
         </button>
-        <button onclick="switchTab('llegaron')" style="background:rgba(26,138,64,0.1);color:#F5CDD6;border:1px solid rgba(37,211,102,0.2);border-left:4px solid #1a8a40;border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600;backdrop-filter:blur(8px)">
-          ✅ Ver productos llegados <span style="color:#4caf7d">(${arrived})</span>
+        <button onclick="switchTab('llegaron')" style="background:var(--card);color:var(--dark);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+          ✅ Ver productos llegados <span style="color:#1a8a40">(${arrived})</span>
         </button>
       </div>
     </div>`;
@@ -1211,6 +1206,7 @@ function renderItem(item, arrived) {
 
   // Clase y badge semáforo
   let cardClass, badgeClass, badgeLabel;
+  const isOwner = isAdmin || (item.legajo ? item.legajo === currentLegajo : item.vendor === currentVendor);
   if (arrived) {
     cardClass = 'arrived';
     badgeClass = 'badge-green';
@@ -2211,7 +2207,7 @@ function exportPDF() {
       </tr></thead>
       <tbody>${tableRows}</tbody>
     </table>
-    <script>window.onload=()=>{window.print();}<\/script>
+    <scr` + `ipt>window.onload=()=>{window.print();}</scr` + `ipt>
     </body></html>`);
   printWindow.document.close();
   closeExport();
@@ -2297,7 +2293,7 @@ window.addEventListener('load', () => {
   } else {
     document.getElementById('lockScreen').style.display = 'flex';
   }
-});
+}); // cierra window.addEventListener load
 </script>
 </body>
 </html>
