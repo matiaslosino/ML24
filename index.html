@@ -178,7 +178,7 @@
     border-color: var(--pink-dark); background: #fff;
     box-shadow: 0 0 0 3px rgba(196,96,122,0.1);
   }
-  input::placeholder { color: rgba(61,37,48,0.35); font-weight: 400; }
+  input::placeholder { color: rgba(61,37,48,0.55); font-weight: 400; }
 
   .btn {
     width: 100%; padding: 13px; background: var(--dark);
@@ -428,11 +428,11 @@
     <div class="lock-sub2">Ingresá tus datos</div>
     <div class="field">
       <label style="color:var(--soft)">Nombre</label>
-      <input type="text" id="lockFirstName" placeholder="Ej: María" onkeydown="if(event.key==='Enter')document.getElementById('lockLastName').focus()" />
+      <input type="text" id="lockFirstName" placeholder="Ej: Damon" onkeydown="if(event.key==='Enter')document.getElementById('lockLastName').focus()" />
     </div>
     <div class="field">
       <label style="color:var(--soft)">Apellido</label>
-      <input type="text" id="lockLastName" placeholder="Ej: González" onkeydown="if(event.key==='Enter')document.getElementById('lockLegajo').focus()" />
+      <input type="text" id="lockLastName" placeholder="Ej: Salvatore" onkeydown="if(event.key==='Enter')document.getElementById('lockLegajo').focus()" />
     </div>
     <div class="field">
       <label style="color:var(--soft)">Número de legajo</label>
@@ -451,11 +451,11 @@
     <div class="lock-sub2">Ingresá la contraseña maestra</div>
     <div class="field">
       <label style="color:var(--soft)">Nombre</label>
-      <input type="text" id="adminFirstName" placeholder="Ej: María" onkeydown="if(event.key==='Enter')document.getElementById('adminLastName').focus()" />
+      <input type="text" id="adminFirstName" placeholder="Ej: Damon" onkeydown="if(event.key==='Enter')document.getElementById('adminLastName').focus()" />
     </div>
     <div class="field">
       <label style="color:var(--soft)">Apellido</label>
-      <input type="text" id="adminLastName" placeholder="Ej: González" onkeydown="if(event.key==='Enter')document.getElementById('adminPassword').focus()" />
+      <input type="text" id="adminLastName" placeholder="Ej: Salvatore" onkeydown="if(event.key==='Enter')document.getElementById('adminPassword').focus()" />
     </div>
     <div class="field">
       <label style="color:var(--soft)">Contraseña</label>
@@ -881,10 +881,17 @@ function render() {
   const pending = items.filter(i => !i.arrived).length;
   document.getElementById('pendingBadge').innerHTML = pending > 0 ? `<span class="badge">${pending}</span>` : '';
 
-  if (currentTab === 'home') main.innerHTML = renderHomeTab(items);
-  else if (currentTab === 'nueva') main.innerHTML = renderNuevaTab();
-  else if (currentTab === 'lista') main.innerHTML = renderListaTab(items.filter(i => !i.arrived));
-  else main.innerHTML = renderLlegaronTab(items.filter(i => i.arrived));
+  if (currentTab === 'home') {
+    document.body.style.background = '#120810';
+    document.body.style.backgroundImage = 'radial-gradient(ellipse at 20% 15%, rgba(139,58,82,0.35) 0%, transparent 55%), radial-gradient(ellipse at 80% 75%, rgba(196,96,122,0.25) 0%, transparent 55%), radial-gradient(ellipse at 55% 45%, rgba(61,10,30,0.45) 0%, transparent 65%)';
+    main.innerHTML = renderHomeTab(items);
+  } else {
+    document.body.style.background = '';
+    document.body.style.backgroundImage = '';
+    if (currentTab === 'nueva') main.innerHTML = renderNuevaTab();
+    else if (currentTab === 'lista') main.innerHTML = renderListaTab(items.filter(i => !i.arrived));
+    else main.innerHTML = renderLlegaronTab(items.filter(i => i.arrived));
+  }
 }
 
 function renderHomeTab(items) {
@@ -902,29 +909,29 @@ function renderHomeTab(items) {
 
       <!-- Saludo -->
       <div style="margin-bottom:28px;text-align:center">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dark);line-height:1.2">${greeting},</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:var(--pink-dark);line-height:1.2">${firstName} ✦</div>
-        <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--soft);margin-top:8px">Legajo #${currentLegajo}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:#F5CDD6;line-height:1.2">${greeting},</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:#E8A0B0;line-height:1.2">${firstName} ✦</div>
+        <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(232,160,176,0.5);margin-top:8px">Legajo #${currentLegajo}</div>
       </div>
 
       <!-- Resumen general -->
-      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Resumen general</div>
+      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(232,160,176,0.6);font-weight:600;margin-bottom:12px">Resumen general</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px">
-        <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid var(--pink-dark);border-radius:12px;padding:16px">
-          <div style="font-size:2rem;font-weight:700;color:var(--dark)">${pending}</div>
-          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Pendientes</div>
+        <div style="background:rgba(196,96,122,0.15);border:1px solid rgba(196,96,122,0.3);border-left:4px solid var(--pink-dark);border-radius:12px;padding:16px;backdrop-filter:blur(8px)">
+          <div style="font-size:2rem;font-weight:700;color:#F5CDD6">${pending}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(232,160,176,0.7);margin-top:2px">Pendientes</div>
         </div>
-        <div style="background:var(--card);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:12px;padding:16px">
-          <div style="font-size:2rem;font-weight:700;color:var(--dark)">${arrived}</div>
-          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-top:2px">Llegaron</div>
+        <div style="background:rgba(26,138,64,0.12);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:12px;padding:16px;backdrop-filter:blur(8px)">
+          <div style="font-size:2rem;font-weight:700;color:#F5CDD6">${arrived}</div>
+          <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(232,160,176,0.7);margin-top:2px">Llegaron</div>
         </div>
       </div>
 
       <!-- Mis pedidos resumen -->
-      <div style="background:rgba(232,160,176,0.08);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:28px">
-        <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:6px">Tus pedidos</div>
-        <div style="font-size:0.9rem;color:var(--dark);font-weight:500;margin-bottom:12px">
-          Tenés <strong style="color:var(--pink-dark)">${myPending}</strong> pedido${myPending !== 1 ? 's' : ''} pendiente${myPending !== 1 ? 's' : ''} a tu nombre.
+      <div style="background:rgba(30,8,20,0.6);border:1px solid rgba(196,96,122,0.2);border-radius:12px;padding:16px;margin-bottom:28px;backdrop-filter:blur(10px)">
+        <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(232,160,176,0.6);font-weight:600;margin-bottom:6px">Tus pedidos</div>
+        <div style="font-size:0.9rem;color:#F5CDD6;font-weight:500;margin-bottom:12px">
+          Tenés <strong style="color:#E8A0B0">${myPending}</strong> pedido${myPending !== 1 ? 's' : ''} pendiente${myPending !== 1 ? 's' : ''} a tu nombre.
         </div>
         <button onclick="openMyOrders()" style="background:var(--pink-dark);color:white;border:none;border-radius:8px;padding:10px 18px;font-family:'Jost',sans-serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-weight:600;width:100%">
           📋 Ver mis pedidos
@@ -932,16 +939,16 @@ function renderHomeTab(items) {
       </div>
 
       <!-- Accesos rápidos -->
-      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);font-weight:600;margin-bottom:12px">Acceso rápido</div>
+      <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(232,160,176,0.6);font-weight:600;margin-bottom:12px">Acceso rápido</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button onclick="switchTab('nueva')" style="background:var(--dark);color:var(--pink-light);border:1px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+        <button onclick="switchTab('nueva')" style="background:rgba(196,96,122,0.18);color:#F5CDD6;border:1px solid rgba(196,96,122,0.35);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
           ➕ Nuevo pedido
         </button>
-        <button onclick="switchTab('lista')" style="background:var(--card);color:var(--dark);border:1px solid var(--border);border-left:4px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
-          📋 Ver lista de espera <span style="color:var(--pink-dark)">(${pending})</span>
+        <button onclick="switchTab('lista')" style="background:rgba(30,8,20,0.5);color:#F5CDD6;border:1px solid rgba(196,96,122,0.2);border-left:4px solid var(--pink-dark);border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+          📋 Ver lista de espera <span style="color:#E8A0B0">(${pending})</span>
         </button>
-        <button onclick="switchTab('llegaron')" style="background:var(--card);color:var(--dark);border:1px solid rgba(37,211,102,0.25);border-left:4px solid #1a8a40;border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
-          ✅ Ver productos llegados <span style="color:#1a8a40">(${arrived})</span>
+        <button onclick="switchTab('llegaron')" style="background:rgba(26,138,64,0.1);color:#F5CDD6;border:1px solid rgba(37,211,102,0.2);border-left:4px solid #1a8a40;border-radius:10px;padding:14px 18px;font-family:'Jost',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;text-align:left;font-weight:600">
+          ✅ Ver productos llegados <span style="color:#4caf7d">(${arrived})</span>
         </button>
       </div>
     </div>`;
@@ -1068,16 +1075,16 @@ function renderNuevaTab() {
               </select>
             </div>
             <div class="field" style="flex:1.5">
-              <input type="text" id="f-product-0" placeholder="Ej: N°5 EDP 100ml" />
+              <input type="text" id="f-product-0" placeholder="Ej: Dior Homme Intense EDP 100ml" />
             </div>
           </div>
         </div>
         <button type="button" class="btn-add-product" onclick="addProductRow()">+ Agregar otro producto</button>
       </div>
-      <div class="field"><label>Nombre</label><input type="text" id="f-name" placeholder="Ej: Laura" /></div>
-      <div class="field"><label>Apellido</label><input type="text" id="f-lastname" placeholder="Ej: Martínez" /></div>
+      <div class="field"><label>Nombre</label><input type="text" id="f-name" placeholder="Ej: Dexter" /></div>
+      <div class="field"><label>Apellido</label><input type="text" id="f-lastname" placeholder="Ej: Morgan" /></div>
       <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="f-phone" placeholder="Ej: 1154321234" /></div>
-      <div class="field"><label>Mail</label><input type="email" id="f-email" placeholder="Ej: laura@gmail.com" /></div>
+      <div class="field"><label>Mail</label><input type="email" id="f-email" placeholder="Ej: dextermorgan24@gmail.com" /></div>
       <div class="field"><label>DNI</label><input type="text" id="f-dni" placeholder="Ej: 30123456" /></div>
       <div class="field"><label>Notas (opcional)</label><input type="text" id="f-notes" placeholder="Ej: Quiere el tamaño grande, regalo" /></div>
       <button class="btn" onclick="addItem()">Agregar a lista de espera</button>
@@ -1316,7 +1323,7 @@ function resetProductRows() {
         <select id="f-brand-0">${buildBrandOptions()}</select>
       </div>
       <div class="field" style="flex:1.5">
-        <input type="text" id="f-product-0" placeholder="Ej: N°5 EDP 100ml" />
+        <input type="text" id="f-product-0" placeholder="Ej: Dior Homme Intense EDP 100ml" />
       </div>
     </div>`;
 }
