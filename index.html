@@ -425,21 +425,35 @@
   <!-- PANEL VENDEDOR -->
   <div class="lock-card" id="lockVendor">
     <div class="lock-title">Identificate</div>
-    <div class="lock-sub2">Ingresá tus datos</div>
-    <div class="field">
-      <label style="color:var(--soft)">Nombre</label>
-      <input type="text" id="lockFirstName" placeholder="Ej: Damon" onkeydown="if(event.key==='Enter')document.getElementById('lockLastName').focus()" />
+    <div class="lock-sub2" id="lockSub">Ingresá tu número de legajo</div>
+
+    <!-- PASO 1: solo legajo -->
+    <div id="stepLegajo">
+      <div class="field">
+        <label style="color:var(--soft)">Número de legajo</label>
+        <input type="number" id="lockLegajo" placeholder="Ej: 1234" onkeydown="if(event.key==='Enter')checkLegajo()" />
+      </div>
+      <div class="lock-error" id="lockError"></div>
+      <button class="lock-btn" onclick="checkLegajo()">Continuar</button>
     </div>
-    <div class="field">
-      <label style="color:var(--soft)">Apellido</label>
-      <input type="text" id="lockLastName" placeholder="Ej: Salvatore" onkeydown="if(event.key==='Enter')document.getElementById('lockLegajo').focus()" />
+
+    <!-- PASO 2: registro primera vez (oculto por defecto) -->
+    <div id="stepRegistro" style="display:none">
+      <div class="field">
+        <label style="color:var(--soft)">Nombre</label>
+        <input type="text" id="lockFirstName" placeholder="Ej: Damon" onkeydown="if(event.key==='Enter')document.getElementById('lockLastName').focus()" />
+      </div>
+      <div class="field">
+        <label style="color:var(--soft)">Apellido</label>
+        <input type="text" id="lockLastName" placeholder="Ej: Salvatore" onkeydown="if(event.key==='Enter')tryLogin()" />
+      </div>
+      <div class="lock-error" id="lockErrorReg"></div>
+      <button class="lock-btn" onclick="tryLogin()">Registrarme e Ingresar</button>
+      <div style="text-align:center;margin-top:12px">
+        <span style="font-size:0.65rem;color:rgba(232,160,176,0.4);letter-spacing:0.1em;cursor:pointer" onclick="backToLegajo()">← Cambiar legajo</span>
+      </div>
     </div>
-    <div class="field">
-      <label style="color:var(--soft)">Número de legajo</label>
-      <input type="number" id="lockLegajo" placeholder="Ej: 1234" onkeydown="if(event.key==='Enter')tryLogin()" />
-    </div>
-    <div class="lock-error" id="lockError"></div>
-    <button class="lock-btn" id="loginBtn">Ingresar</button>
+
     <div style="text-align:center;margin-top:16px">
       <span style="font-size:0.65rem;color:rgba(232,160,176,0.4);letter-spacing:0.15em;cursor:pointer;text-transform:uppercase" onclick="toggleAdminPanel()">Acceso administrador</span>
     </div>
@@ -818,30 +832,83 @@ function loginAsAdmin(fullName) {
   setTimeout(showInstallBanner, 2000);
 }
 
-function tryLogin() {
-  const first = capitalize(document.getElementById('lockFirstName').value);
-  const last = capitalize(document.getElementById('lockLastName').value);
+function checkLegajo() {
   const legajo = document.getElementById('lockLegajo').value.trim();
-  if (!first || !last || !legajo) {
-    document.getElementById('lockError').textContent = 'Completá nombre, apellido y legajo.';
+  if (!legajo) {
+    document.getElementById('lockError').textContent = 'Ingresá tu número de legajo.';
     return;
   }
   if (!/^\d+$/.test(legajo)) {
     document.getElementById('lockError').textContent = 'El legajo debe ser solo números.';
     return;
   }
+  document.getElementById('lockError').textContent = 'Verificando...';
+
+  // Buscar en Firebase si el legajo ya existe
+  db.ref('ml24-vendors/' + legajo).once('value', snap => {
+    const vendorData = snap.val();
+    if (vendorData) {
+      // Legajo conocido — login directo
+      const fullName = vendorData.name;
+      currentVendor = fullName;
+      currentLegajo = legajo;
+      isAdmin = false;
+      localStorage.setItem('ml24vendor', fullName);
+      localStorage.setItem('ml24legajo', legajo);
+      localStorage.removeItem('ml24isAdmin');
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('vendorNameTag').textContent = fullName;
+      document.getElementById('adminBadge').style.display = 'none';
+      switchTab('home');
+      setTimeout(showInstallBanner, 2000);
+    } else {
+      // Legajo nuevo — pedir nombre y apellido
+      document.getElementById('lockError').textContent = '';
+      document.getElementById('lockSub').textContent = 'Primera vez · Registrá tu nombre';
+      document.getElementById('stepLegajo').style.display = 'none';
+      document.getElementById('stepRegistro').style.display = 'block';
+      setTimeout(() => document.getElementById('lockFirstName').focus(), 100);
+    }
+  });
+}
+
+function backToLegajo() {
+  document.getElementById('stepLegajo').style.display = 'block';
+  document.getElementById('stepRegistro').style.display = 'none';
+  document.getElementById('lockSub').textContent = 'Ingresá tu número de legajo';
+  document.getElementById('lockErrorReg').textContent = '';
+  document.getElementById('lockFirstName').value = '';
+  document.getElementById('lockLastName').value = '';
+}
+
+function tryLogin() {
+  const legajo = document.getElementById('lockLegajo').value.trim();
+  const first = capitalize(document.getElementById('lockFirstName').value);
+  const last = capitalize(document.getElementById('lockLastName').value);
+  if (!first || !last) {
+    document.getElementById('lockErrorReg').textContent = 'Completá nombre y apellido.';
+    return;
+  }
   const fullName = first + ' ' + last;
-  currentVendor = fullName;
-  currentLegajo = legajo;
-  isAdmin = false;
-  localStorage.setItem('ml24vendor', fullName);
-  localStorage.setItem('ml24legajo', legajo);
-  localStorage.removeItem('ml24isAdmin');
-  document.getElementById('lockScreen').style.display = 'none';
-  document.getElementById('vendorNameTag').textContent = fullName;
-  document.getElementById('adminBadge').style.display = 'none';
-  switchTab('home');
-  setTimeout(showInstallBanner, 2000);
+
+  // Guardar en Firebase
+  db.ref('ml24-vendors/' + legajo).set({ name: fullName, legajo, createdAt: Date.now() }, err => {
+    if (err) {
+      document.getElementById('lockErrorReg').textContent = 'Error al registrar. Intentá de nuevo.';
+      return;
+    }
+    currentVendor = fullName;
+    currentLegajo = legajo;
+    isAdmin = false;
+    localStorage.setItem('ml24vendor', fullName);
+    localStorage.setItem('ml24legajo', legajo);
+    localStorage.removeItem('ml24isAdmin');
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('vendorNameTag').textContent = fullName;
+    document.getElementById('adminBadge').style.display = 'none';
+    switchTab('home');
+    setTimeout(showInstallBanner, 2000);
+  });
 }
 
 function logout() {
@@ -855,6 +922,9 @@ function logout() {
   document.getElementById('lockScreen').style.display = 'flex';
   document.getElementById('lockVendor').style.display = 'block';
   document.getElementById('lockAdmin').style.display = 'none';
+  document.getElementById('stepLegajo').style.display = 'block';
+  document.getElementById('stepRegistro').style.display = 'none';
+  document.getElementById('lockSub').textContent = 'Ingresá tu número de legajo';
   document.getElementById('lockFirstName').value = '';
   document.getElementById('lockLastName').value = '';
   document.getElementById('lockLegajo').value = '';
@@ -862,6 +932,7 @@ function logout() {
   document.getElementById('adminLastName').value = '';
   document.getElementById('adminPassword').value = '';
   document.getElementById('lockError').textContent = '';
+  document.getElementById('lockErrorReg').textContent = '';
   document.getElementById('adminError').textContent = '';
   document.getElementById('adminBadge').style.display = 'none';
 }
@@ -2273,7 +2344,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 window.addEventListener('load', () => {
-  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  document.getElementById('loginBtn') && document.getElementById('loginBtn').addEventListener('click', checkLegajo);
   document.getElementById('lockLastName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
   document.getElementById('lockFirstName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lockLastName').focus(); });
 
