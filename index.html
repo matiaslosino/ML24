@@ -256,8 +256,8 @@
     text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px;
   }
   .btn-whatsapp:hover { background: rgba(37,211,102,0.1); }
-  .btn-delete { background: transparent; color: #c0392b; border-color: rgba(192,57,43,0.2); max-width: 40px; }
-  .btn-delete:hover { background: rgba(192,57,43,0.08); }
+  .btn-delete { background: transparent; color: #e05555; border: 1px solid rgba(224,85,85,0.4) !important; border-radius: 6px; max-width: 40px; font-size: 0.9rem; }
+  .btn-delete:hover { background: rgba(224,85,85,0.15); border-color: #e05555 !important; }
 
   /* BADGE */
   .badge {
@@ -538,6 +538,7 @@
     </div>
   </div>
 </div>
+<datalist id="brands-list"></datalist>
 <div class="tabs">
   <div class="tab active" onclick="switchTab('home')" id="tab-home">🏠 Inicio</div>
   <div class="tab" onclick="switchTab('nueva')" id="tab-nueva">➕ Nueva</div>
@@ -756,6 +757,24 @@ function saveItems(items) {
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
+function validatePhone(input) {
+  const hint = document.getElementById('phone-hint');
+  if (!hint) return;
+  const val = input.value.replace(/\D/g, '');
+  if (val.length === 0) { hint.style.display = 'none'; input.style.borderColor = ''; return; }
+  const valid = /^(11|[23]\d{2})\d{7,8}$/.test(val) && val.length === 10;
+  hint.style.display = 'block';
+  if (valid) {
+    hint.textContent = '✓ Formato correcto';
+    hint.style.color = '#1a8a40';
+    input.style.borderColor = '#1a8a40';
+  } else {
+    hint.textContent = val.length < 10 ? `${val.length}/10 dígitos — sin 0 ni 15` : 'Formato inválido. Ej: 1154321234';
+    hint.style.color = '#c0392b';
+    input.style.borderColor = 'rgba(192,57,43,0.5)';
+  }
+}
+
 function capitalize(str) {
   return str.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
@@ -825,6 +844,7 @@ function loginAsAdmin(fullName) {
   localStorage.setItem('ml24vendor', fullName);
   localStorage.setItem('ml24legajo', 'ADMIN');
   localStorage.setItem('ml24isAdmin', 'true');
+  localStorage.setItem('ml24loginTs', Date.now());
   document.getElementById('lockScreen').style.display = 'none';
   document.getElementById('vendorNameTag').textContent = fullName;
   document.getElementById('adminBadge').style.display = 'inline';
@@ -856,6 +876,7 @@ function checkLegajo() {
       localStorage.setItem('ml24vendor', fullName);
       localStorage.setItem('ml24legajo', legajo);
       localStorage.removeItem('ml24isAdmin');
+      localStorage.setItem('ml24loginTs', Date.now());
       document.getElementById('lockScreen').style.display = 'none';
       document.getElementById('vendorNameTag').textContent = fullName;
       document.getElementById('adminBadge').style.display = 'none';
@@ -903,6 +924,7 @@ function tryLogin() {
     localStorage.setItem('ml24vendor', fullName);
     localStorage.setItem('ml24legajo', legajo);
     localStorage.removeItem('ml24isAdmin');
+    localStorage.setItem('ml24loginTs', Date.now());
     document.getElementById('lockScreen').style.display = 'none';
     document.getElementById('vendorNameTag').textContent = fullName;
     document.getElementById('adminBadge').style.display = 'none';
@@ -919,6 +941,7 @@ function logout() {
   localStorage.removeItem('ml24vendor');
   localStorage.removeItem('ml24legajo');
   localStorage.removeItem('ml24isAdmin');
+  localStorage.removeItem('ml24loginTs');
   document.getElementById('lockScreen').style.display = 'flex';
   document.getElementById('lockVendor').style.display = 'block';
   document.getElementById('lockAdmin').style.display = 'none';
@@ -1035,115 +1058,8 @@ function renderNuevaTab() {
         <div id="product-list">
           <div class="product-row" id="product-row-0">
             <div class="field">
-              <select id="f-brand-0">
-                <option value="">— Marca —</option>
-                <option>Abercrombie &amp; Fitch</option>
-          <option>Adolfo Dominguez</option>
-          <option>Aerin</option>
-          <option>Anua</option>
-          <option>Armani</option>
-          <option>Atkinsons</option>
-          <option>Azzaro</option>
-          <option>Banderas</option>
-          <option>Bensimon</option>
-          <option>Bogart</option>
-          <option>Brown Bee</option>
-          <option>Brunello Cucinelli</option>
-          <option>Burberry</option>
-          <option>CHANEL</option>
-          <option>Cacharel</option>
-          <option>Calvin Klein</option>
-          <option>Carolina Herrera</option>
-          <option>Cartier</option>
-          <option>Celimax</option>
-          <option>Cher</option>
-          <option>Clarins</option>
-          <option>Clean Beauty Collective</option>
-          <option>Clinique</option>
-          <option>Coach</option>
-          <option>Cosrx</option>
-          <option>Creed</option>
-          <option>Davidoff</option>
-          <option>Diesel</option>
-          <option>Dior</option>
-          <option>Dolce&amp;Gabbana</option>
-          <option>DKNY</option>
-          <option>Drunk Elephant</option>
-          <option>Dsquared</option>
-          <option>Estée Lauder</option>
-          <option>Ferragamo</option>
-          <option>Filorga</option>
-          <option>Ga.ma Italy</option>
-          <option>Givenchy</option>
-          <option>Gucci</option>
-          <option>Guerlain</option>
-          <option>Guess</option>
-          <option>Haan</option>
-          <option>Hair Rituel</option>
-          <option>Halloween</option>
-          <option>Hamidi</option>
-          <option>Hermès</option>
-          <option>Hollister</option>
-          <option>Hugo Boss</option>
-          <option>Iconic London</option>
-          <option>Issey Miyake</option>
-          <option>Jean Paul Gaultier</option>
-          <option>Jimmy Choo</option>
-          <option>Joico</option>
-          <option>Jo Malone</option>
-          <option>Juliette Has A Gun</option>
-          <option>Kenzo</option>
-          <option>Kerastase</option>
-          <option>Kylie Jenner</option>
-          <option>La Mer</option>
-          <option>La Prairie</option>
-          <option>Lancome</option>
-          <option>Lattafa</option>
-          <option>Lendava</option>
-          <option>Lolita Lempicka</option>
-          <option>MAC</option>
-          <option>Marc Jacobs</option>
-          <option>Marchand D'Aromes</option>
-          <option>Mavala</option>
-          <option>Medicube</option>
-          <option>Memo</option>
-          <option>Messi</option>
-          <option>Michael Kors</option>
-          <option>Missoni</option>
-          <option>Mixsoon</option>
-          <option>Montblanc</option>
-          <option>Moschino</option>
-          <option>Mugler</option>
-          <option>Naj Oleari</option>
-          <option>Narciso Rodriguez</option>
-          <option>Nina Ricci</option>
-          <option>Off White</option>
-          <option>Orlane</option>
-          <option>Oscar de la Renta</option>
-          <option>Parfums de Marly</option>
-          <option>Pupa</option>
-          <option>Rabanne</option>
-          <option>Ralph Lauren</option>
-          <option>Rouge Collection</option>
-          <option>Sarkany</option>
-          <option>Shiseido</option>
-          <option>Skin1004</option>
-          <option>Sisley</option>
-          <option>Tangle Teezer</option>
-          <option>Ted Lapidus</option>
-          <option>The Glow Factor</option>
-          <option>Tom Ford</option>
-          <option>Tommy Hilfiger</option>
-          <option>Tory Burch</option>
-          <option>Tucci</option>
-          <option>Valentino</option>
-          <option>Versace</option>
-          <option>Victorinox</option>
-          <option>Viktor &amp; Rolf</option>
-          <option>VT Cosmetics</option>
-          <option>Yves Saint Laurent</option>
-          <option>Zadig&amp;Voltaire</option>
-              </select>
+              <input type="text" id="f-brand-0" list="brands-list" placeholder="Escribí o elegí una marca" autocomplete="off" style="width:100%" />
+            </div>
             </div>
             <div class="field" style="flex:1.5">
               <input type="text" id="f-product-0" placeholder="Ej: Dior Homme Intense EDP 100ml" />
@@ -1154,7 +1070,7 @@ function renderNuevaTab() {
       </div>
       <div class="field"><label>Nombre</label><input type="text" id="f-name" placeholder="Ej: Dexter" /></div>
       <div class="field"><label>Apellido</label><input type="text" id="f-lastname" placeholder="Ej: Morgan" /></div>
-      <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="f-phone" placeholder="Ej: 1154321234" /></div>
+      <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="f-phone" placeholder="Ej: 1154321234" oninput="validatePhone(this)" /><div id="phone-hint" style="font-size:0.65rem;margin-top:4px;display:none"></div></div>
       <div class="field"><label>Mail</label><input type="email" id="f-email" placeholder="Ej: dextermorgan24@gmail.com" /></div>
       <div class="field"><label>DNI</label><input type="text" id="f-dni" placeholder="Ej: 30123456" /></div>
       <div class="field"><label>Notas (opcional)</label><input type="text" id="f-notes" placeholder="Ej: Quiere el tamaño grande, regalo" /></div>
@@ -1350,6 +1266,19 @@ const BRANDS = ["Abercrombie & Fitch","Adolfo Dominguez","Aerin","Anua","Armani"
 
 let productRowCount = 1;
 
+function buildBrandInput(id, value = '') {
+  return `<input type="text" id="${id}" list="brands-list" placeholder="Escribí o elegí una marca" value="${value}" autocomplete="off" style="width:100%" />`;
+}
+
+function ensureBrandsList() {
+  if (!document.getElementById('brands-list')) {
+    const dl = document.createElement('datalist');
+    dl.id = 'brands-list';
+    dl.innerHTML = BRANDS.map(b => `<option value="${b}">`).join('');
+    document.body.appendChild(dl);
+  }
+}
+
 function buildBrandOptions() {
   return `<option value="">— Marca —</option>` + BRANDS.map(b => `<option>${b}</option>`).join('');
 }
@@ -1361,7 +1290,7 @@ function addProductRow() {
   div.id = `product-row-${idx}`;
   div.innerHTML = `
     <div class="field">
-      <select id="f-brand-${idx}">${buildBrandOptions()}</select>
+      <input type="text" id="f-brand-${idx}" list="brands-list" placeholder="Escribí o elegí una marca" autocomplete="off" style="width:100%" />
     </div>
     <div class="field" style="flex:1.5">
       <input type="text" id="f-product-${idx}" placeholder="Ej: EDP 100ml" />
@@ -1391,7 +1320,7 @@ function resetProductRows() {
   document.getElementById('product-list').innerHTML = `
     <div class="product-row" id="product-row-0">
       <div class="field">
-        <select id="f-brand-0">${buildBrandOptions()}</select>
+        <input type="text" id="f-brand-0" list="brands-list" placeholder="Escribí o elegí una marca" autocomplete="off" style="width:100%" />
       </div>
       <div class="field" style="flex:1.5">
         <input type="text" id="f-product-0" placeholder="Ej: Dior Homme Intense EDP 100ml" />
@@ -1475,6 +1404,12 @@ function addItem() {
   const dni = document.getElementById('f-dni').value.trim();
   const notes = document.getElementById('f-notes').value.trim();
   if (validProducts.length === 0 || !name || !phone) { alert('Por favor completá al menos un producto, nombre y teléfono.'); return; }
+  const phoneClean = phone.replace(/\D/g, '');
+  if (!/^(11|[23]\d{2})\d{7,8}$/.test(phoneClean) || phoneClean.length !== 10) {
+    alert('Teléfono inválido. Ingresá 10 dígitos sin 0 ni 15.\nEjemplo: 1154321234 · 2614567890');
+    document.getElementById('f-phone').focus();
+    return;
+  }
   const items = loadItems();
   const newId = Date.now().toString();
   const prodStr = validProducts.map(p => [p.brand, p.product].filter(Boolean).join(' ')).join(', ');
@@ -1784,7 +1719,7 @@ function openEditItem(id) {
     div.id = `edit-row-${idx}`;
     div.innerHTML = `
       <div class="field">
-        <select id="edit-brand-${idx}">${buildBrandOptions()}</select>
+        <input type="text" id="edit-brand-${idx}" list="brands-list" placeholder="Escribí o elegí una marca" autocomplete="off" style="width:100%" />
       </div>
       <div class="field" style="flex:1.5">
         <input type="text" id="edit-product-${idx}" placeholder="Ej: EDP 100ml" value="${p.product||''}" />
@@ -1811,7 +1746,7 @@ function addEditProductRow() {
   div.id = `edit-row-${idx}`;
   div.innerHTML = `
     <div class="field">
-      <select id="edit-brand-${idx}">${buildBrandOptions()}</select>
+      <input type="text" id="edit-brand-${idx}" list="brands-list" placeholder="Escribí o elegí una marca" autocomplete="off" style="width:100%" />
     </div>
     <div class="field" style="flex:1.5">
       <input type="text" id="edit-product-${idx}" placeholder="Ej: EDP 100ml" />
@@ -2344,6 +2279,10 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 window.addEventListener('load', () => {
+  // Poblar datalist de marcas
+  const dl = document.getElementById('brands-list');
+  if (dl) dl.innerHTML = BRANDS.map(b => `<option value="${b}">`).join('');
+
   document.getElementById('loginBtn') && document.getElementById('loginBtn').addEventListener('click', checkLegajo);
   document.getElementById('lockLastName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
   document.getElementById('lockFirstName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lockLastName').focus(); });
@@ -2359,7 +2298,11 @@ window.addEventListener('load', () => {
   const saved = localStorage.getItem('ml24vendor');
   const savedLegajo = localStorage.getItem('ml24legajo');
   const savedAdmin = localStorage.getItem('ml24isAdmin');
-  if (saved && savedLegajo) {
+  const savedLoginTs = localStorage.getItem('ml24loginTs');
+  const SESSION_DURATION = 24 * 60 * 60 * 1000; // 1 día en ms
+  const sessionExpired = !savedLoginTs || (Date.now() - parseInt(savedLoginTs)) > SESSION_DURATION;
+
+  if (saved && savedLegajo && !sessionExpired) {
     currentVendor = saved;
     currentLegajo = savedLegajo;
     isAdmin = savedAdmin === 'true';
@@ -2369,6 +2312,11 @@ window.addEventListener('load', () => {
     switchTab('home');
     setTimeout(showInstallBanner, 2500);
   } else {
+    // Sesión expirada o no existe — limpiar y mostrar login
+    localStorage.removeItem('ml24vendor');
+    localStorage.removeItem('ml24legajo');
+    localStorage.removeItem('ml24isAdmin');
+    localStorage.removeItem('ml24loginTs');
     document.getElementById('lockScreen').style.display = 'flex';
   }
 }); // cierra window.addEventListener load
