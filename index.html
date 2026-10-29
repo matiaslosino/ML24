@@ -1620,8 +1620,21 @@ function openVendors() {
     if (!i.arrived) vendorMap[key].pending++;
   });
 
-  db.ref('ml24-vendors-disabled').once('value', snap => {
+  // Además de los que tienen pedidos, mostrar a todos los vendedores registrados
+  // y a cualquier legajo desactivado (aunque no tenga pedidos), para poder reactivarlo.
+  Promise.all([
+    db.ref('ml24-vendors-disabled').once('value'),
+    db.ref('ml24-vendors').once('value')
+  ]).then(([snap, regSnap]) => {
     const disabled = snap.val() || {};
+    const registered = regSnap.val() || {};
+    Object.keys(registered).forEach(leg => {
+      const r = registered[leg] || {};
+      if (!vendorMap[leg]) vendorMap[leg] = { name: r.name || 'Sin nombre', legajo: leg, total: 0, pending: 0 };
+    });
+    Object.keys(disabled).forEach(leg => {
+      if (disabled[leg] && !vendorMap[leg]) vendorMap[leg] = { name: 'Legajo sin registro', legajo: leg, total: 0, pending: 0 };
+    });
     const vendors = Object.values(vendorMap);
 
     const changePassBtn = `
@@ -1645,7 +1658,7 @@ function openVendors() {
                 </div>
                 <div style="font-size:0.7rem;color:var(--soft);margin-top:2px">Legajo #${esc(v.legajo)} · ${v.total} pedido${v.total!==1?'s':''} · ${v.pending} pendiente${v.pending!==1?'s':''}</div>
               </div>
-              <button class="btn ${isDisabled?'':'danger'}" style="padding:6px 12px;font-size:0.65rem;white-space:nowrap;flex-shrink:0" onclick="toggleVendor('${esc(v.legajo)}', ${isDisabled})">
+              <button class="btn ${isDisabled?'':'danger'}" style="padding:6px 12px;font-size:0.65rem;white-space:nowrap;flex-shrink:0;width:auto" onclick="toggleVendor('${esc(v.legajo)}', ${isDisabled})">
                 ${isDisabled ? '✓ Activar' : '✕ Desactivar'}
               </button>
             </div>`;
