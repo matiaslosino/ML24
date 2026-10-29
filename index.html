@@ -733,11 +733,76 @@ function esc(v) {
 }
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-function loadItems() { return itemsCache; }
+// Los pedidos se guardan uno por uno en 'ml24-pedidos/{id}'.
+// Antes se guardaba la lista entera en 'ml24-waitlist' y, si dos personas
+// guardaban a la vez, una podía pisar los cambios de la otra.
+// 'ml24-waitlist' queda en la base sin tocar, como respaldo del formato viejo.
+const PEDIDOS = 'ml24-pedidos';
 
+// Devuelve una copia de la lista, para que los cambios se puedan comparar al guardar.
+function loadItems() { return JSON.parse(JSON.stringify(itemsCache)); }
+
+// Recibe la lista completa con los cambios, pero solo escribe en la base
+// los pedidos que cambiaron, se agregaron o se quitaron.
 function saveItems(items) {
-  itemsCache = items;
-  db.ref('ml24-waitlist').set(items);
+  const before = {};
+  itemsCache.forEach(i => { if (i && i.id) before[i.id] = JSON.stringify(i); });
+  const updates = {};
+  const seen = new Set();
+  items.forEach(i => {
+    if (!i || !i.id) return;
+    seen.add(i.id);
+    if (before[i.id] !== JSON.stringify(i)) updates[i.id] = i;
+  });
+  Object.keys(before).forEach(id => { if (!seen.has(id)) updates[id] = null; });
+  itemsCache = items.filter(i => i && i.id);
+  if (Object.keys(updates).length === 0) return;
+  db.ref(PEDIDOS).update(updates).catch(err => {
+    console.error('Error al guardar', err);
+    alert('No se pudo guardar el cambio. Revisá la conexión e intentá de nuevo.');
+  });
+}
+
+// Número interno único para cada pedido (fecha + parte al azar, para que
+// dos pedidos creados en el mismo instante no tengan el mismo número).
+function newItemId() {
+  return Date.now().toString() + Math.random().toString(36).slice(2, 6);
+}
+
+// Pasa los pedidos del formato viejo (lista entera) al nuevo (uno por uno).
+// Corre una sola vez: la transacción evita que dos celulares lo hagan a la vez.
+function migrateToPedidos() {
+  return db.ref('ml24-config/pedidosMigratedAt').once('value').then(doneSnap => {
+    if (doneSnap.val()) return; // ya se migró antes
+    return db.ref('ml24-waitlist').once('value').then(oldSnap => {
+    const oldItems = Object.values(oldSnap.val() || {}).filter(i => i && i.id);
+    const migrated = {};
+    oldItems.forEach(i => { migrated[i.id] = i; });
+    return db.ref(PEDIDOS).transaction(current => {
+      if (current) return; // ya migrado: no hacer nada
+      return Object.keys(migrated).length ? migrated : undefined;
+    }).then(() => db.ref('ml24-config/pedidosMigratedAt').transaction(cur => cur || Date.now()));
+    });
+  });
+}
+
+// Puente temporal: si alguien sigue con la versión vieja abierta y carga un
+// pedido nuevo, ese pedido se copia al formato nuevo para no perderlo.
+function bridgeOldClients() {
+  db.ref('ml24-config/pedidosMigratedAt').once('value', tsSnap => {
+    const migratedAt = tsSnap.val();
+    if (!migratedAt) return;
+    db.ref('ml24-waitlist').on('value', snap => {
+      Object.values(snap.val() || {}).forEach(i => {
+        if (!i || !i.id || !(i.ts > migratedAt)) return;
+        if (itemsCache.some(x => x.id === i.id)) return;
+        // Cada pedido se copia una sola vez (así, si después se borra, no vuelve a aparecer)
+        db.ref('ml24-config/bridged/' + i.id).transaction(done => done ? undefined : true).then(res => {
+          if (res && res.committed) db.ref(PEDIDOS + '/' + i.id).transaction(cur => cur ? undefined : i);
+        });
+      });
+    });
+  });
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -1347,7 +1412,7 @@ function showToast(title, sub = '', icon = '✅') {
 // La app ya no pide DNI. Esto borra el campo dni de los pedidos y de la papelera
 // sin tocar ningún otro dato. Si no queda ningún DNI, no hace nada.
 function removeStoredDni() {
-  ['ml24-waitlist', 'ml24-trash'].forEach(path => {
+  [PEDIDOS, 'ml24-trash'].forEach(path => {
     db.ref(path).once('value', snap => {
       snap.forEach(child => {
         if (child.child('dni').exists()) child.ref.child('dni').remove();
@@ -1423,7 +1488,7 @@ function addItem() {
     return;
   }
   const items = loadItems();
-  const newId = Date.now().toString();
+  const newId = newItemId();
   const prodStr = validProducts.map(p => [p.brand, p.product].filter(Boolean).join(' ')).join(', ');
   items.push({ id: newId, products: validProducts, name, lastname, phone, email, notes, vendor: currentVendor, legajo: currentLegajo, ts: Date.now(), arrived: false, arrivedTs: null });
   saveItems(items);
@@ -1457,7 +1522,7 @@ function markArrivedProduct(id, productIdx) {
   const arrivedProduct = products[productIdx];
   const prodStr = [arrivedProduct.brand, arrivedProduct.product].filter(Boolean).join(' ');
 
-  const newId = Date.now().toString();
+  const newId = newItemId();
   const newItem = {
     ...item,
     id: newId,
@@ -2310,13 +2375,14 @@ window.addEventListener('load', () => {
   document.getElementById('lockLastName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
   document.getElementById('lockFirstName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lockLastName').focus(); });
 
-  // Borrar los DNI que quedaron guardados de versiones anteriores (solo ese campo)
-  removeStoredDni();
-
-  // Escuchar cambios en Firebase en tiempo real
-  db.ref('ml24-waitlist').on('value', (snapshot) => {
-    itemsCache = snapshot.val() || [];
-    if (currentVendor) render();
+  // Pasar al guardado por pedido (solo la primera vez) y después escuchar cambios
+  migrateToPedidos().catch(err => console.error('Error al migrar', err)).then(() => {
+    removeStoredDni();
+    db.ref(PEDIDOS).on('value', (snapshot) => {
+      itemsCache = Object.values(snapshot.val() || {}).filter(i => i && i.id);
+      if (currentVendor) render();
+    });
+    bridgeOldClients();
   });
 
   updateTrashBadge();
