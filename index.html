@@ -543,7 +543,6 @@
       <div class="field"><label>Apellido</label><input type="text" id="edit-lastname" /></div>
       <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="edit-phone" /></div>
       <div class="field"><label>Mail</label><input type="email" id="edit-email" /></div>
-      <div class="field"><label>DNI</label><input type="text" id="edit-dni" /></div>
       <div class="field"><label>Notas</label><input type="text" id="edit-notes" /></div>
       <button class="btn" onclick="saveEditItem()">Guardar cambios</button>
       <button class="btn ghost" onclick="closeEditItem()">Cancelar</button>
@@ -726,6 +725,13 @@ let filterVendorL = '';
 let filterDateFromL = '';
 let filterDateToL = '';
 
+// ─── SEGURIDAD: LIMPIAR TEXTO ───────────────────────────────────────────────
+// Convierte lo que escriben los usuarios en texto común antes de mostrarlo,
+// para que nunca se interprete como código dentro de la página.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"'`]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]));
+}
+
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 function loadItems() { return itemsCache; }
 
@@ -843,7 +849,14 @@ function checkLegajo() {
   document.getElementById('lockError').textContent = 'Verificando...';
 
   // Buscar en Firebase si el legajo ya existe
-  db.ref('ml24-vendors/' + legajo).once('value', snap => {
+  Promise.all([
+    db.ref('ml24-vendors/' + legajo).once('value'),
+    db.ref('ml24-vendors-disabled/' + legajo).once('value')
+  ]).then(([snap, disabledSnap]) => {
+    if (disabledSnap.val()) {
+      document.getElementById('lockError').textContent = 'Este legajo está desactivado. Consultá con el administrador.';
+      return;
+    }
     const vendorData = snap.val();
     if (vendorData) {
       // Legajo conocido — login directo
@@ -913,6 +926,16 @@ function tryLogin() {
 
 function logout() {
   if (!confirm('¿Cerrar sesión?')) return;
+  doLogout();
+}
+
+// Cierra la sesión sin preguntar (por ejemplo, si el vendedor fue desactivado)
+function forceLogout(message) {
+  doLogout();
+  document.getElementById('lockError').textContent = message || '';
+}
+
+function doLogout() {
   currentVendor = '';
   currentLegajo = '';
   isAdmin = false;
@@ -982,8 +1005,8 @@ function renderHomeTab(items) {
       <!-- Saludo -->
       <div style="margin-bottom:28px;text-align:center">
         <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:#F5CDD6;line-height:1.2">${greeting},</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:#E8A0B0;line-height:1.2">${firstName} ✦</div>
-        <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(232,160,176,0.5);margin-top:8px">Legajo #${currentLegajo}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:400;color:#E8A0B0;line-height:1.2">${esc(firstName)} ✦</div>
+        <div style="font-size:0.7rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(232,160,176,0.5);margin-top:8px">Legajo #${esc(currentLegajo)}</div>
       </div>
 
       <!-- Resumen general -->
@@ -1050,7 +1073,6 @@ function renderNuevaTab() {
       <div class="field"><label>Apellido</label><input type="text" id="f-lastname" placeholder="Ej: Morgan" /></div>
       <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="f-phone" placeholder="Ej: 1154321234" oninput="validatePhone(this)" /><div id="phone-hint" style="font-size:0.65rem;margin-top:4px;display:none"></div></div>
       <div class="field"><label>Mail</label><input type="email" id="f-email" placeholder="Ej: dextermorgan24@gmail.com" /></div>
-      <div class="field"><label>DNI</label><input type="text" id="f-dni" placeholder="Ej: 30123456" /></div>
       <div class="field"><label>Notas (opcional)</label><input type="text" id="f-notes" placeholder="Ej: Quiere el tamaño grande, regalo" /></div>
       <button class="btn" onclick="addItem()">Agregar a lista de espera</button>
     </div>`;
@@ -1067,7 +1089,7 @@ function renderListaTab(items) {
       const prodStr = prods.map(p => `${p.brand} ${p.product}`).join(' ').toLowerCase();
       return prodStr.includes(q) || i.name.toLowerCase().includes(q) ||
         (i.lastname||'').toLowerCase().includes(q) || i.phone.includes(q) ||
-        (i.email||'').toLowerCase().includes(q) || (i.dni||'').includes(q);
+        (i.email||'').toLowerCase().includes(q);
     });
   }
 
@@ -1102,7 +1124,7 @@ function renderListaTab(items) {
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
       <div class="search-wrap" style="flex:1;margin-bottom:0">
         <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Buscar por producto, cliente, DNI..." value="${searchQ}" oninput="updateSearch(this.value)" />
+        <input type="text" placeholder="Buscar por producto, cliente, teléfono..." value="${esc(searchQ)}" oninput="updateSearch(this.value)" />
       </div>
       <button class="btn-filter ${hasFilters ? 'has-filters' : ''}" onclick="openFilters()">
         ⚙️ Filtros${hasFilters ? '<span class=\'filter-active-dot\'></span>' : ''}
@@ -1125,7 +1147,7 @@ function renderLlegaronTab(items) {
       const prodStr = prods.map(p => `${p.brand} ${p.product}`).join(' ').toLowerCase();
       return prodStr.includes(q) || i.name.toLowerCase().includes(q) ||
         (i.lastname||'').toLowerCase().includes(q) || i.phone.includes(q) ||
-        (i.brand||'').toLowerCase().includes(q) || (i.dni||'').includes(q) ||
+        (i.brand||'').toLowerCase().includes(q) ||
         (i.vendor||'').toLowerCase().includes(q);
     });
   }
@@ -1154,7 +1176,7 @@ function renderLlegaronTab(items) {
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
       <div class="search-wrap" style="flex:1;margin-bottom:0">
         <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Buscar por producto, cliente, DNI..." value="${searchLlegaron}" oninput="updateSearchLlegaron(this.value)" />
+        <input type="text" placeholder="Buscar por producto, cliente, teléfono..." value="${esc(searchLlegaron)}" oninput="updateSearchLlegaron(this.value)" />
       </div>
       <button class="btn-filter ${hasFilters ? 'has-filters' : ''}" onclick="openFiltersL()">
         ⚙️ Filtros${hasFilters ? '<span class=\'filter-active-dot\'></span>' : ''}
@@ -1196,14 +1218,14 @@ function renderItem(item, arrived) {
   const products = item.products || [{ brand: item.brand || '', product: item.product || '' }];
   const multiProduct = products.length > 1;
   const waMsg = encodeURIComponent(`Hola ${fullName}! Te avisamos que el/los producto(s) que reservaste ya llegaron: *${products.map(p=>[p.brand,p.product].filter(Boolean).join(' ')).join(', ')}*. ¡Pasá cuando quieras!`);
-  const waLink = `https://wa.me/549${phone}?text=${waMsg}`;
+  const waLink = `https://wa.me/549${encodeURIComponent(String(phone).replace(/\D/g, ''))}?text=${waMsg}`;
 
   // Si tiene múltiples productos y no llegó aún, mostrar botón por producto
   const productsHtml = products.map((p, idx) => `
     <div class="item-product" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <div>
-        ${p.brand ? `<span style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--pink-dark);font-family:'Jost',sans-serif;display:block;margin-bottom:2px">${p.brand}</span>` : ''}
-        ${p.product}
+        ${p.brand ? `<span style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--pink-dark);font-family:'Jost',sans-serif;display:block;margin-bottom:2px">${esc(p.brand)}</span>` : ''}
+        ${esc(p.product)}
       </div>
       ${multiProduct && !arrived ? `<button class="btn-sm btn-arrived" style="white-space:nowrap;flex-shrink:0;font-size:0.6rem;padding:4px 8px" onclick="markArrivedProduct('${item.id}', ${idx})">Llegó ✓</button>` : ''}
     </div>`).join('');
@@ -1213,18 +1235,18 @@ function renderItem(item, arrived) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="flex:1">${productsHtml}</div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:8px;flex-shrink:0">
-          <div style="font-size:0.62rem;letter-spacing:0.08em;color:var(--mid);background:rgba(61,37,48,0.07);padding:3px 8px;border-radius:10px;font-weight:600;text-transform:uppercase">👤 ${item.vendor}</div>
+          <div style="font-size:0.62rem;letter-spacing:0.08em;color:var(--mid);background:rgba(61,37,48,0.07);padding:3px 8px;border-radius:10px;font-weight:600;text-transform:uppercase">👤 ${esc(item.vendor)}</div>
           <span class="status-badge ${badgeClass}">${badgeLabel}</span>
         </div>
       </div>
-      <div class="item-client"><span style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--soft)">Cliente: </span><strong>${fullName}</strong>${item.dni ? ' · DNI ' + item.dni : ''}</div>
+      <div class="item-client"><span style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--soft)">Cliente: </span><strong>${esc(fullName)}</strong></div>
       <div class="item-meta">
-        <span class="meta-chip">📱 ${item.phone}</span>
-        ${item.email ? `<span class="meta-chip">✉️ ${item.email}</span>` : ''}
+        <span class="meta-chip">📱 ${esc(item.phone)}</span>
+        ${item.email ? `<span class="meta-chip">✉️ ${esc(item.email)}</span>` : ''}
         <span class="meta-chip">📅 Creado: ${date}</span>
         ${!arrived ? `<span class="meta-chip" style="color:${diasColor};font-weight:600;background:${diasEspera>=30?'rgba(192,57,43,0.08)':diasEspera>=14?'rgba(184,114,10,0.08)':'rgba(61,37,48,0.08)'}">⏱ ${diasLabel}</span>` : ''}
       </div>
-      ${item.notes ? `<div style="font-size:0.8rem;color:var(--soft);margin-bottom:8px;font-style:italic;">"${item.notes}"</div>` : ''}
+      ${item.notes ? `<div style="font-size:0.8rem;color:var(--soft);margin-bottom:8px;font-style:italic;">"${esc(item.notes)}"</div>` : ''}
       <div class="item-actions">
         ${!arrived
           ? `<button class="btn-sm btn-arrived" onclick="markArrived('${item.id}')">${multiProduct ? 'Llegaron todos ✓' : 'Llegó ✓'}</button>`
@@ -1245,7 +1267,7 @@ const BRANDS = ["Abercrombie & Fitch","Adolfo Dominguez","Aerin","Anua","Armani"
 let productRowCount = 1;
 
 function buildBrandInput(id, value = '') {
-  return `<input type="text" id="${id}" list="brands-list" placeholder="Escribí o elegí una marca" value="${value}" autocomplete="off" style="width:100%" />`;
+  return `<input type="text" id="${id}" list="brands-list" placeholder="Escribí o elegí una marca" value="${esc(value)}" autocomplete="off" style="width:100%" />`;
 }
 
 function ensureBrandsList() {
@@ -1321,6 +1343,19 @@ function showToast(title, sub = '', icon = '✅') {
   toastTimer = setTimeout(() => { bar.style.display = 'none'; }, 3500);
 }
 
+// ─── LIMPIEZA DE DNI ─────────────────────────────────────────────────────────
+// La app ya no pide DNI. Esto borra el campo dni de los pedidos y de la papelera
+// sin tocar ningún otro dato. Si no queda ningún DNI, no hace nada.
+function removeStoredDni() {
+  ['ml24-waitlist', 'ml24-trash'].forEach(path => {
+    db.ref(path).once('value', snap => {
+      snap.forEach(child => {
+        if (child.child('dni').exists()) child.ref.child('dni').remove();
+      });
+    });
+  });
+}
+
 // ─── HISTORIAL ────────────────────────────────────────────────────────────────
 function logHistory(itemId, action, detail = '') {
   const entry = {
@@ -1357,8 +1392,8 @@ function openHistory(id) {
             <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(232,160,176,0.12)">
               <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px">${icons[e.action] || '•'}</div>
               <div>
-                <div style="font-size:0.85rem;font-weight:600;color:var(--dark)">${e.action}${e.detail ? ` <span style="font-weight:400;color:var(--soft)">· ${e.detail}</span>` : ''}</div>
-                <div style="font-size:0.68rem;color:var(--soft);margin-top:2px">${e.by} · ${fecha} ${hora}</div>
+                <div style="font-size:0.85rem;font-weight:600;color:var(--dark)">${esc(e.action)}${e.detail ? ` <span style="font-weight:400;color:var(--soft)">· ${esc(e.detail)}</span>` : ''}</div>
+                <div style="font-size:0.68rem;color:var(--soft);margin-top:2px">${esc(e.by)} · ${fecha} ${hora}</div>
               </div>
             </div>`;
         }).join('');
@@ -1379,7 +1414,6 @@ function addItem() {
   const lastname = document.getElementById('f-lastname').value.trim();
   const phone = document.getElementById('f-phone').value.trim();
   const email = document.getElementById('f-email').value.trim();
-  const dni = document.getElementById('f-dni').value.trim();
   const notes = document.getElementById('f-notes').value.trim();
   if (validProducts.length === 0 || !name || !phone) { alert('Por favor completá al menos un producto, nombre y teléfono.'); return; }
   const phoneClean = phone.replace(/\D/g, '');
@@ -1391,11 +1425,11 @@ function addItem() {
   const items = loadItems();
   const newId = Date.now().toString();
   const prodStr = validProducts.map(p => [p.brand, p.product].filter(Boolean).join(' ')).join(', ');
-  items.push({ id: newId, products: validProducts, name, lastname, phone, email, dni, notes, vendor: currentVendor, legajo: currentLegajo, ts: Date.now(), arrived: false, arrivedTs: null });
+  items.push({ id: newId, products: validProducts, name, lastname, phone, email, notes, vendor: currentVendor, legajo: currentLegajo, ts: Date.now(), arrived: false, arrivedTs: null });
   saveItems(items);
   logHistory(newId, 'Creado', prodStr);
   resetProductRows();
-  ['f-name','f-lastname','f-phone','f-email','f-dni','f-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  ['f-name','f-lastname','f-phone','f-email','f-notes'].forEach(id => { document.getElementById(id).value = ''; });
   const clientName = [name, document.getElementById('f-lastname') ? document.getElementById('f-lastname').value.trim() : ''].filter(Boolean).join(' ');
   showToast('¡Pedido agregado!', `${prodStr}${name ? ' · ' + name : ''}`);
   switchTab('lista');
@@ -1527,17 +1561,17 @@ function openTrash() {
         const isOwner = isAdmin || (item.legajo ? item.legajo === currentLegajo : item.vendor === currentVendor);
         return `
           <div style="padding:14px 0;border-bottom:1px solid rgba(232,160,176,0.15)">
-            <div style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--pink-dark);font-weight:700;margin-bottom:2px">${prods[0]?.brand || ''}</div>
-            <div style="font-size:0.95rem;color:var(--dark);font-weight:600;margin-bottom:4px">${prodText}</div>
-            <div style="font-size:0.8rem;color:var(--mid);margin-bottom:4px">${fullName} · 📱 ${item.phone}</div>
+            <div style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--pink-dark);font-weight:700;margin-bottom:2px">${esc(prods[0]?.brand || '')}</div>
+            <div style="font-size:0.95rem;color:var(--dark);font-weight:600;margin-bottom:4px">${esc(prodText)}</div>
+            <div style="font-size:0.8rem;color:var(--mid);margin-bottom:4px">${esc(fullName)} · 📱 ${esc(item.phone)}</div>
             <div style="font-size:0.65rem;color:var(--soft);margin-bottom:10px">
-              Eliminado el ${deletedDate} por ${item.deletedBy} · 
+              Eliminado el ${deletedDate} por ${esc(item.deletedBy)} · 
               <span style="color:${diasRestantes<=5?'#c0392b':'var(--soft)'}">borra en ${diasRestantes} día${diasRestantes!==1?'s':''}</span>
             </div>
             <div style="display:flex;gap:8px">
               ${isOwner ? `<button class="btn" style="padding:7px 14px;font-size:0.7rem" onclick="restoreItem('${item.id}')">↩ Restaurar</button>` : ''}
               ${isOwner ? `<button class="btn danger" style="padding:7px 14px;font-size:0.7rem" onclick="deleteForever('${item.id}')">🗑 Borrar definitivamente</button>` : ''}
-              ${!isOwner ? `<span style="font-size:0.7rem;color:var(--soft);font-style:italic">Pedido de ${item.vendor}</span>` : ''}
+              ${!isOwner ? `<span style="font-size:0.7rem;color:var(--soft);font-style:italic">Pedido de ${esc(item.vendor)}</span>` : ''}
             </div>
           </div>`;
       }).join('');
@@ -1607,11 +1641,11 @@ function openVendors() {
             <div style="padding:14px 0;border-bottom:1px solid rgba(232,160,176,0.15);display:flex;justify-content:space-between;align-items:center;gap:12px">
               <div>
                 <div style="font-size:0.9rem;font-weight:600;color:${isDisabled?'var(--soft)':'var(--dark)'}">
-                  ${v.name} ${isDisabled?'<span style="font-size:0.6rem;color:#c0392b;background:rgba(192,57,43,0.1);padding:2px 6px;border-radius:8px;margin-left:4px">INACTIVO</span>':''}
+                  ${esc(v.name)} ${isDisabled?'<span style="font-size:0.6rem;color:#c0392b;background:rgba(192,57,43,0.1);padding:2px 6px;border-radius:8px;margin-left:4px">INACTIVO</span>':''}
                 </div>
-                <div style="font-size:0.7rem;color:var(--soft);margin-top:2px">Legajo #${v.legajo} · ${v.total} pedido${v.total!==1?'s':''} · ${v.pending} pendiente${v.pending!==1?'s':''}</div>
+                <div style="font-size:0.7rem;color:var(--soft);margin-top:2px">Legajo #${esc(v.legajo)} · ${v.total} pedido${v.total!==1?'s':''} · ${v.pending} pendiente${v.pending!==1?'s':''}</div>
               </div>
-              <button class="btn ${isDisabled?'':'danger'}" style="padding:6px 12px;font-size:0.65rem;white-space:nowrap;flex-shrink:0" onclick="toggleVendor('${v.legajo}', ${isDisabled})">
+              <button class="btn ${isDisabled?'':'danger'}" style="padding:6px 12px;font-size:0.65rem;white-space:nowrap;flex-shrink:0" onclick="toggleVendor('${esc(v.legajo)}', ${isDisabled})">
                 ${isDisabled ? '✓ Activar' : '✕ Desactivar'}
               </button>
             </div>`;
@@ -1700,7 +1734,7 @@ function openEditItem(id) {
         <input type="text" id="edit-brand-${idx}" list="brands-list" placeholder="Escribí o elegí una marca" autocomplete="off" style="width:100%" />
       </div>
       <div class="field" style="flex:1.5">
-        <input type="text" id="edit-product-${idx}" placeholder="Ej: EDP 100ml" value="${p.product||''}" />
+        <input type="text" id="edit-product-${idx}" placeholder="Ej: EDP 100ml" value="${esc(p.product||'')}" />
       </div>
       ${idx > 0 ? `<button type="button" class="btn-remove-product" onclick="removeEditProductRow(${idx})">✕</button>` : ''}`;
     list.appendChild(div);
@@ -1712,7 +1746,6 @@ function openEditItem(id) {
   document.getElementById('edit-lastname').value = item.lastname || '';
   document.getElementById('edit-phone').value = item.phone || '';
   document.getElementById('edit-email').value = item.email || '';
-  document.getElementById('edit-dni').value = item.dni || '';
   document.getElementById('edit-notes').value = item.notes || '';
   document.getElementById('editOverlay').classList.add('open');
 }
@@ -1757,10 +1790,10 @@ function saveEditItem() {
   const items = loadItems();
   const idx = items.findIndex(i => i.id === editingId);
   if (idx === -1) return;
-  items[idx] = { ...items[idx], products, name,
+  const { dni: _dniDescartado, ...itemSinDni } = items[idx];
+  items[idx] = { ...itemSinDni, products, name,
     lastname: document.getElementById('edit-lastname').value.trim(),
     phone, email: document.getElementById('edit-email').value.trim(),
-    dni: document.getElementById('edit-dni').value.trim(),
     notes: document.getElementById('edit-notes').value.trim(),
   };
   saveItems(items);
@@ -1930,7 +1963,7 @@ function renderMyOrderItem(item) {
   const products = item.products || [{ brand: item.brand||'', product: item.product||'' }];
   const prodHtml = products.map(p =>
     `<div style="font-size:1rem;color:var(--dark);font-weight:600;">
-      ${p.brand ? `<span style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--pink-dark);font-weight:700">${p.brand} · </span>` : ''}${p.product}
+      ${p.brand ? `<span style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--pink-dark);font-weight:700">${esc(p.brand)} · </span>` : ''}${esc(p.product)}
     </div>`
   ).join('');
   return `
@@ -1938,7 +1971,7 @@ function renderMyOrderItem(item) {
       ${prodHtml}
       <div style="font-size:0.85rem;color:var(--dark);margin-top:5px;font-weight:500">
         <span style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);font-weight:600">Cliente: </span>
-        <strong>${fullName}</strong> · 📱 ${item.phone}
+        <strong>${esc(fullName)}</strong> · 📱 ${esc(item.phone)}
       </div>
       <div style="display:flex;gap:8px;margin-top:5px;align-items:center">
         <span style="font-size:0.68rem;color:var(--mid);font-weight:500">📅 Creado: ${date}</span>
@@ -1998,7 +2031,7 @@ function openStats() {
     html += `
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:0.82rem;font-weight:600;color:var(--dark)">${name}</span>
+          <span style="font-size:0.82rem;font-weight:600;color:var(--dark)">${esc(name)}</span>
           <span style="font-size:0.75rem;color:var(--mid);font-weight:500">${data.total} · <span style="color:#b8720a">${data.pending} pend.</span> · <span style="color:#1a8a40">${data.arrived} ok</span></span>
         </div>
         <div style="background:rgba(61,37,48,0.08);border-radius:20px;height:7px;overflow:hidden">
@@ -2027,7 +2060,7 @@ function openStats() {
     html += `
       <div style="margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-size:0.8rem;font-weight:600;color:var(--dark)">${brand}</span>
+          <span style="font-size:0.8rem;font-weight:600;color:var(--dark)">${esc(brand)}</span>
           <span style="font-size:0.75rem;color:var(--mid);font-weight:500">${count} pedido${count>1?'s':''}</span>
         </div>
         <div style="background:rgba(61,37,48,0.08);border-radius:20px;height:6px;overflow:hidden">
@@ -2123,7 +2156,6 @@ function getExportRows() {
       'Apellido': item.lastname || '',
       'Teléfono': item.phone || '',
       'Mail': item.email || '',
-      'DNI': item.dni || '',
       'Notas': item.notes || '',
       'Vendedor': item.vendor || '',
       'Fecha': fecha
@@ -2265,6 +2297,9 @@ window.addEventListener('load', () => {
   document.getElementById('lockLastName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
   document.getElementById('lockFirstName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lockLastName').focus(); });
 
+  // Borrar los DNI que quedaron guardados de versiones anteriores (solo ese campo)
+  removeStoredDni();
+
   // Escuchar cambios en Firebase en tiempo real
   db.ref('ml24-waitlist').on('value', (snapshot) => {
     itemsCache = snapshot.val() || [];
@@ -2289,6 +2324,11 @@ window.addEventListener('load', () => {
     if (isAdmin) document.getElementById('adminBadge').style.display = 'inline';
     switchTab('home');
     setTimeout(showInstallBanner, 2500);
+    if (!isAdmin) {
+      db.ref('ml24-vendors-disabled/' + savedLegajo).once('value', snap => {
+        if (snap.val()) forceLogout('Tu legajo fue desactivado. Consultá con el administrador.');
+      });
+    }
   } else {
     // Sesión expirada o no existe — limpiar y mostrar login
     localStorage.removeItem('ml24vendor');
