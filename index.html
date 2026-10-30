@@ -1327,7 +1327,7 @@ function renderItem(item, arrived) {
 }
 
 // ─── PRODUCTOS DINÁMICOS ──────────────────────────────────────────────────────
-const BRANDS = ["Abercrombie & Fitch","Adolfo Dominguez","Aerin","Anua","Armani","Atkinsons","Azzaro","Banderas","Bensimon","Bogart","Brown Bee","Brunello Cucinelli","Burberry","CHANEL","Cacharel","Calvin Klein","Carolina Herrera","Cartier","Celimax","Cher","Clarins","Clean Beauty Collective","Clinique","Coach","Cosrx","Creed","Davidoff","Diesel","Dior","Dolce&Gabbana","DKNY","Drunk Elephant","Dsquared","Estée Lauder","Ferragamo","Filorga","Ga.ma Italy","Givenchy","Gucci","Guerlain","Guess","Haan","Hair Rituel","Halloween","Hamidi","Hermès","Hollister","Hugo Boss","Iconic London","Issey Miyake","Jean Paul Gaultier","Jimmy Choo","Joico","Jo Malone","Juliette Has A Gun","Kenzo","Kerastase","Kylie Jenner","La Mer","La Prairie","Lancome","Lattafa","Lendava","Lolita Lempicka","MAC","Marc Jacobs","Marchand D'Aromes","Mavala","Medicube","Memo","Messi","Michael Kors","Missoni","Mixsoon","Montblanc","Moschino","Mugler","Naj Oleari","Narciso Rodriguez","Nina Ricci","Off White","Orlane","Oscar de la Renta","Parfums de Marly","Pupa","Rabanne","Ralph Lauren","Rouge Collection","Sarkany","Shiseido","Skin1004","Sisley","Tangle Teezer","Ted Lapidus","The Glow Factor","Tom Ford","Tommy Hilfiger","Tory Burch","Tucci","Valentino","Versace","Victorinox","Viktor & Rolf","VT Cosmetics","Yves Saint Laurent","Zadig&Voltaire"];
+const BRANDS = ["47 Street","Abercrombie & Fitch","Acqua di Parma","Adolfo Dominguez","Aerin","Afnan","Ajmal","Al Haramain","Amouage","Anastasia Beverly Hills","Anua","Ariana Grande","Armaf","Armani","Atkinsons","Avène","Ay Not Dead","Azzaro","Balenciaga","Banderas","Beauty of Joseon","Benefit","Benetton","Benito Fernández","Bensimon","Biferdil","Bioderma","Biotherm","Bobbi Brown","Bogart","Bottega Veneta","Boucheron","Brown Bee","Brunello Cucinelli","Burberry","Bvlgari","Byredo","Cacharel","Calvin Klein","Carolina Herrera","Cartier","Catrice","Caudalie","Celimax","CeraVe","Cetaphil","CHANEL","Charlotte Tilbury","Cher","Chloé","Chopard","Clarins","Clean Beauty Collective","Clinique","Coach","Comme des Garçons","Cosrx","Creed","Darphin","Davidoff","Dermalogica","Diesel","Dior","Diptyque","DKNY","Dolce&Gabbana","Dr. Jart+","Dr. Selby","Drunk Elephant","Dsquared","Dunhill","Dyson","e.l.f.","Elie Saab","Elizabeth Arden","Embryolisse","Erborian","Escada","Essence","Estée Lauder","Eucerin","Fenty Beauty","Ferragamo","Ferrari","Filorga","Fresh","Ga.ma Italy","Garnier","GHD","Givenchy","Glow Recipe","Goutal","Gucci","Guerlain","Guess","Haan","Hair Rituel","Halloween","Hamidi","Hermès","Hollister","Huda Beauty","Hugo Boss","Iconic London","Idraet","Initio","Innisfree","Isdin","Issey Miyake","Jazmín Chebar","Jean Paul Gaultier","Jil Sander","Jimmy Choo","Joico","Jo Malone","Juicy Couture","Juliette Has A Gun","Kayali","Kenzo","Kerastase","Kevingston","Kiehl's","Kiko Milano","Kilian","Kylie Jenner","L'Artisan Parfumeur","L'Oréal Paris","L'Oréal Professionnel","Lacoste","Lalique","La Mer","Lancaster","Lancome","Laneige","Lanvin","La Prairie","La Roche-Posay","Las Pepas","Lattafa","Laura Mercier","Le Labo","Lendava","Lidherma","Loewe","Lolita Lempicka","MAC","Maison Alhambra","Maison Francis Kurkdjian","Maison Margiela","Make Up For Ever","Mancera","Marchand D'Aromes","Marc Jacobs","Mavala","Max Factor","Maybelline","Medicube","Memo","Mercedes-Benz","Messi","Michael Kors","Milani","Missoni","Mixsoon","Montale","Montblanc","Moroccanoil","Moschino","Mugler","Naj Oleari","Narciso Rodriguez","NARS","Natura","Neutrogena","Nina Ricci","Nishane","Nivea","Nuxe","NYX","Off White","Olaplex","Ona Saez","Origins","Orlane","Oscar de la Renta","Parfums de Marly","Paula's Choice","Paula Cahen D'Anvers","Payot","Penhaligon's","Police","Prada","Prüne","Pupa","Rabanne","Ralph Lauren","Rapsodia","Rare Beauty","Rasasi","Redken","Revlon","Rimmel","Rochas","Rouge Collection","Round Lab","Sarkany","Schwarzkopf","Sesderma","Shiseido","Sisley","Skin1004","SkinCeuticals","Some By Mi","Sulwhasoo","Swiss Arabian","Tangle Teezer","Tascani","Tatcha","Ted Lapidus","The Glow Factor","The Ordinary","Tom Ford","Tommy Hilfiger","Too Faced","Torriden","Tory Burch","Tucci","Urban Decay","Uriage","Valentino","Van Cleef & Arpels","Vera Wang","Versace","Vichy","Victorinox","Viktor & Rolf","Vitamina","VT Cosmetics","Wanama","Wella","Xerjoff","Yves Saint Laurent","Zadig&Voltaire"];
 
 let productRowCount = 1;
 
@@ -1335,17 +1335,35 @@ function buildBrandInput(id, value = '') {
   return `<input type="text" id="${id}" list="brands-list" placeholder="Escribí o elegí una marca" value="${esc(value)}" autocomplete="off" style="width:100%" />`;
 }
 
+// Sugerencias de marca: la lista fija + cualquier marca que ya se haya cargado
+// en un pedido (así, si alguien escribe una marca nueva, queda sugerida para todos).
+function allBrands() {
+  const key = b => b.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const seen = new Map();
+  BRANDS.forEach(b => seen.set(key(b), b));
+  (itemsCache || []).forEach(i => (i.products || [{ brand: i.brand }]).forEach(p => {
+    const b = (p && p.brand || '').trim();
+    if (b && !seen.has(key(b))) seen.set(key(b), b);
+  }));
+  return [...seen.values()].sort((a, b) => key(a).localeCompare(key(b)));
+}
+
+function refreshBrandsList() {
+  const dl = document.getElementById('brands-list');
+  if (dl) dl.innerHTML = allBrands().map(b => `<option value="${esc(b)}">`).join('');
+}
+
 function ensureBrandsList() {
   if (!document.getElementById('brands-list')) {
     const dl = document.createElement('datalist');
     dl.id = 'brands-list';
-    dl.innerHTML = BRANDS.map(b => `<option value="${b}">`).join('');
     document.body.appendChild(dl);
   }
+  refreshBrandsList();
 }
 
 function buildBrandOptions() {
-  return `<option value="">— Marca —</option>` + BRANDS.map(b => `<option>${b}</option>`).join('');
+  return `<option value="">— Marca —</option>` + allBrands().map(b => `<option>${esc(b)}</option>`).join('');
 }
 
 function addProductRow() {
@@ -2368,8 +2386,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 window.addEventListener('load', () => {
   // Poblar datalist de marcas
-  const dl = document.getElementById('brands-list');
-  if (dl) dl.innerHTML = BRANDS.map(b => `<option value="${b}">`).join('');
+  refreshBrandsList();
 
   document.getElementById('loginBtn') && document.getElementById('loginBtn').addEventListener('click', checkLegajo);
   document.getElementById('lockLastName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
@@ -2380,6 +2397,7 @@ window.addEventListener('load', () => {
     removeStoredDni();
     db.ref(PEDIDOS).on('value', (snapshot) => {
       itemsCache = Object.values(snapshot.val() || {}).filter(i => i && i.id);
+      refreshBrandsList();
       if (currentVendor) render();
     });
     bridgeOldClients();
