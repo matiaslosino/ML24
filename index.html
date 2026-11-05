@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -47,7 +47,7 @@
   /* HEADER */
   header {
     background: var(--dark);
-    padding: 18px 20px;
+    padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -58,7 +58,7 @@
   }
   .logo {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem;
+    font-size: 1.7rem;
     font-weight: 400;
     color: var(--pink-light);
     letter-spacing: 0.15em;
@@ -104,29 +104,37 @@
 
   /* MENÚ DESPLEGABLE */
   .menu-btn {
-    font-size: 0.8rem;
-    color: var(--pink-light);
-    background: rgba(232,160,176,0.12);
-    border: 1px solid rgba(232,160,176,0.35);
-    padding: 7px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; letter-spacing: 0.04em; font-weight: 500;
+    color: var(--pink-light); background: var(--mid);
+    border: 1px solid var(--pink-dark);
+    cursor: pointer; transition: transform 0.15s, background 0.2s;
+    position: relative; user-select: none; -webkit-tap-highlight-color: transparent;
   }
-  .menu-btn:hover { background: rgba(232,160,176,0.22); border-color: var(--pink); }
+  .menu-btn:hover { background: #4d2f3c; }
+  .menu-btn:active { transform: scale(0.94); }
+  .menu-btn.is-admin::after {
+    content: ''; position: absolute; right: -1px; bottom: -1px;
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--pink); border: 2px solid var(--dark);
+  }
+  .menu-head { padding: 14px 18px 12px; border-bottom: 1px solid rgba(232,160,176,0.15); }
+  .menu-name { font-size: 0.95rem; color: var(--pink-light); font-weight: 500; }
+  .menu-meta { font-size: 0.7rem; color: var(--soft); margin-top: 2px; display: flex; gap: 8px; align-items: center; }
+  .menu-admin { background: var(--pink-dark); color: #fff; font-size: 0.6rem; letter-spacing: 0.1em; padding: 1px 6px; border-radius: 8px; }
+  .dropdown-item.logout { color: #ff9a9a; border-top: 1px solid rgba(232,160,176,0.15); }
   .dropdown {
     position: absolute; top: calc(100% + 10px); right: 0;
     background: var(--dark); border: 1px solid rgba(232,160,176,0.3);
-    border-radius: 12px; min-width: 180px;
+    border-radius: 12px; min-width: 220px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     z-index: 500; overflow: hidden;
     display: none; flex-direction: column;
   }
   .dropdown.open { display: flex; }
   .dropdown-item {
-    padding: 12px 18px; font-size: 0.75rem; letter-spacing: 0.1em;
+    padding: 13px 18px; font-size: 0.8rem; letter-spacing: 0.04em;
     color: var(--pink-light); cursor: pointer; transition: background 0.15s;
     font-weight: 600; border-bottom: 1px solid rgba(232,160,176,0.1);
   }
@@ -134,18 +142,48 @@
   .dropdown-item:hover { background: rgba(232,160,176,0.12); }
 
   /* TABS */
-  .tabs { display: flex; background: var(--dark); border-top: 1px solid rgba(232,160,176,0.2); }
-  .tab {
-    flex: 1; padding: 12px; text-align: center;
-    font-size: 0.62rem; letter-spacing: 0.2em;
-    color: rgba(232,160,176,0.7); cursor: pointer; transition: all 0.2s;
-    text-transform: uppercase; border-bottom: 2px solid transparent;
-    font-weight: 500;
+  .tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
+    display: flex; align-items: flex-end; justify-content: space-around;
+    background: var(--dark); border-top: 1px solid rgba(232,160,176,0.18);
+    padding: 8px 6px calc(10px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
   }
-  .tab.active { color: var(--pink-light); border-bottom-color: var(--pink); font-weight: 600; }
+  .tab {
+    flex: 1; max-width: 120px; position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 0.68rem; letter-spacing: 0.03em; font-weight: 500;
+    color: var(--soft); cursor: pointer; transition: color 0.2s;
+    -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .tab svg { width: 23px; height: 23px; transition: transform 0.15s; }
+  .tab:active svg { transform: scale(0.9); }
+  .tab.active { color: var(--pink-light); }
+  .tab.active::before {
+    content: ''; position: absolute; top: -8px; width: 28px; height: 2px;
+    border-radius: 2px; background: var(--pink);
+  }
+  .tab .badge {
+    position: absolute; top: -5px; left: calc(50% + 4px);
+    min-width: 18px; height: 18px; line-height: 18px; padding: 0 5px;
+    border-radius: 9px; font-size: 0.62rem; text-align: center;
+    background: var(--pink-dark); color: #fff; border: 2px solid var(--dark);
+  }
+  .tab.tab-fab { gap: 4px; }
+  .tab-fab .fab {
+    width: 54px; height: 54px; border-radius: 50%; margin-top: -30px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--pink-dark); color: #fff;
+    border: 4px solid var(--dark); box-shadow: 0 4px 14px rgba(196,96,122,0.45);
+    transition: transform 0.15s, background 0.2s;
+  }
+  .tab-fab .fab svg { width: 26px; height: 26px; }
+  .tab-fab:active .fab { transform: scale(0.92); }
+  .tab-fab.active .fab { background: var(--pink); color: var(--dark); }
+  .tab-fab.active::before { display: none; }
 
   /* MAIN */
-  main { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+  main { padding: 20px 16px calc(110px + env(safe-area-inset-bottom)); max-width: 600px; margin: 0 auto; }
   .section-title {
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.6rem; font-weight: 400; color: var(--dark); margin-bottom: 4px;
@@ -481,12 +519,10 @@
   <div class="logo">
     <svg width="30" height="30" viewBox="15 15 90 90" fill="none" style="flex-shrink:0"><path d="M60 16C60 16 30 52 30 74A30 30 0 0 0 90 74C90 52 60 16 60 16Z" fill="#2A1622" stroke="#E8A0B0" stroke-width="1.6"/><circle cx="60" cy="74" r="19" fill="none" stroke="#E8A0B0" stroke-width=".8" opacity=".4"/><line x1="60" y1="74" x2="60" y2="60" stroke="#F5CDD6" stroke-width="2.2" stroke-linecap="round"/><line x1="60" y1="74" x2="70" y2="80" stroke="#C4607A" stroke-width="2.2" stroke-linecap="round"/><circle cx="60" cy="74" r="2.6" fill="#F5CDD6"/></svg>
     ML24
-    <span>Lista de Espera</span>
   </div>
   <div class="header-right">
-    <div class="vendor-tag">👤 <span id="vendorNameTag">—</span> <span id="adminBadge" style="display:none;background:var(--pink-dark);color:white;font-size:0.55rem;padding:2px 6px;border-radius:10px;letter-spacing:0.1em;margin-left:4px">ADMIN</span></div>
-    <div class="logout-btn" onclick="logout()">Salir</div>
-    <div class="menu-btn" onclick="toggleMenu()">⋯</div>
+    <div style="display:none"><span id="vendorNameTag">—</span> <span id="adminBadge" style="display:none;background:var(--pink-dark);color:white;font-size:0.55rem;padding:2px 6px;border-radius:10px;letter-spacing:0.1em;margin-left:4px">ADMIN</span></div>
+    <div class="menu-btn" id="avatarBtn" onclick="toggleMenu()" role="button" aria-label="Menú de usuario">—</div>
     <div class="dropdown" id="headerMenu"></div>
   </div>
 </header>
@@ -503,7 +539,7 @@
 </div>
 
 <!-- BANNER INSTALAR APP -->
-<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;animation:slideUpBanner 0.4s ease">
+<div id="installBanner" style="display:none;position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:0;right:0;z-index:9998;animation:slideUpBanner 0.4s ease">
   <div style="background:#221520;border-top:2px solid var(--pink-dark);padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 -4px 24px rgba(0,0,0,0.4)">
     <svg width="36" height="36" viewBox="0 0 120 120" fill="none" style="flex-shrink:0"><rect width="120" height="120" rx="26" fill="#1A1018"/><path d="M60 16C60 16 30 52 30 74A30 30 0 0 0 90 74C90 52 60 16 60 16Z" fill="#2A1622" stroke="#E8A0B0" stroke-width="1.6"/><circle cx="60" cy="74" r="19" fill="none" stroke="#E8A0B0" stroke-width=".8" opacity=".4"/><line x1="60" y1="74" x2="60" y2="60" stroke="#F5CDD6" stroke-width="2.2" stroke-linecap="round"/><line x1="60" y1="74" x2="70" y2="80" stroke="#C4607A" stroke-width="2.2" stroke-linecap="round"/><circle cx="60" cy="74" r="2.6" fill="#F5CDD6"/></svg>
     <div style="flex:1;min-width:0">
@@ -517,13 +553,13 @@
   </div>
 </div>
 <datalist id="brands-list"></datalist>
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('home')" id="tab-home">🏠 Inicio</div>
-  <div class="tab" onclick="switchTab('nueva')" id="tab-nueva">➕ Nueva</div>
-  <div class="tab" onclick="switchTab('lista')" id="tab-lista">📋 Lista de espera <span id="pendingBadge"></span></div>
-  <div class="tab" onclick="switchTab('llegaron')" id="tab-llegaron">✅ Llegaron</div>
-</div>
 <main id="mainContent"></main>
+<nav class="tabs" aria-label="Secciones">
+  <div class="tab active" onclick="switchTab('home')" id="tab-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>Inicio</div>
+  <div class="tab" onclick="switchTab('lista')" id="tab-lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 5 8 5 8 9s-8 4-8 9"/><path d="M16 3c0 5-8 5-8 9s8 4 8 9"/></svg>Espera<span id="pendingBadge"></span></div>
+  <div class="tab tab-fab" onclick="switchTab('nueva')" id="tab-nueva" aria-label="Nuevo pedido"><span class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>Nuevo</div>
+  <div class="tab" onclick="switchTab('llegaron')" id="tab-llegaron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg>Llegaron</div>
+</nav>
 
 <!-- EDITAR PEDIDO MODAL -->
 <div class="overlay" id="editOverlay">
@@ -1039,7 +1075,8 @@ function render() {
   const items = loadItems();
   const main = document.getElementById('mainContent');
   const pending = items.filter(i => !i.arrived).length;
-  document.getElementById('pendingBadge').innerHTML = pending > 0 ? `<span class="badge">${pending}</span>` : '';
+  document.getElementById('pendingBadge').innerHTML = pending > 0 ? `<span class="badge">${pending > 99 ? '99+' : pending}</span>` : '';
+  updateAvatar();
 
   if (currentTab === 'home') {
     document.body.style.background = '#120810';
@@ -2213,6 +2250,15 @@ function closeStats() {
 }
 
 // ─── MENÚ ─────────────────────────────────────────────────────────────────────
+// Iniciales del usuario en el círculo de la barra de arriba
+function updateAvatar() {
+  const btn = document.getElementById('avatarBtn');
+  if (!btn) return;
+  const words = (currentVendor || '').trim().split(/\s+/).filter(Boolean);
+  btn.textContent = words.length ? (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase() : '—';
+  btn.classList.toggle('is-admin', !!isAdmin);
+}
+
 function toggleMenu() {
   const menu = document.getElementById('headerMenu');
   if (menu.classList.contains('open')) {
@@ -2220,11 +2266,16 @@ function toggleMenu() {
     return;
   }
   menu.innerHTML = `
-    ${isAdmin ? `<div class="dropdown-item" onclick="openExport();toggleMenu()">⬇️ Exportar</div>` : ''}
-    <div class="dropdown-item" onclick="openStats();toggleMenu()">📊 Stats</div>
+    <div class="menu-head">
+      <div class="menu-name">${esc(currentVendor)}</div>
+      <div class="menu-meta">${isAdmin ? '<span class="menu-admin">ADMIN</span>' : `Legajo #${esc(currentLegajo)}`}</div>
+    </div>
     <div class="dropdown-item" onclick="openMyOrders();toggleMenu()">📋 Mis pedidos</div>
+    <div class="dropdown-item" onclick="openStats();toggleMenu()">📊 Estadísticas</div>
     <div class="dropdown-item" onclick="openTrash();toggleMenu()">🗑 Papelera <span id="trashBadge"></span></div>
-    ${isAdmin ? `<div class="dropdown-item" style="border-top:1px solid rgba(232,160,176,0.15);color:var(--pink-dark)" onclick="openVendors();toggleMenu()">⚙️ Gestión vendedores</div>` : ''}
+    ${isAdmin ? `<div class="dropdown-item" onclick="openExport();toggleMenu()">⬇️ Exportar</div>` : ''}
+    ${isAdmin ? `<div class="dropdown-item" onclick="openVendors();toggleMenu()">⚙️ Gestión de vendedores</div>` : ''}
+    <div class="dropdown-item logout" onclick="toggleMenu();logout()">Salir</div>
   `;
   updateTrashBadge();
   menu.classList.add('open');
