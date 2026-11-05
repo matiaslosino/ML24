@@ -1284,8 +1284,8 @@ function renderItem(item, arrived) {
   const multiProduct = products.length > 1;
   const prodList = products.map(p=>[p.brand,p.product].filter(Boolean).join(' ')).join(', ');
   const waMsg = encodeURIComponent(multiProduct
-    ? `¡Hola ${fullName}! Te escribimos de Rouge para avisarte que ya llegaron tus productos: *${prodList}*. ¡Pasá cuando quieras!`
-    : `¡Hola ${fullName}! Te escribimos de Rouge para avisarte que ya llegó tu producto: *${prodList}*. ¡Pasá cuando quieras!`);
+    ? `Hola ${fullName}, ¿cómo estás? Te escribimos de Rouge para avisarte que ya llegaron tus productos: *${prodList}*. ¡Pasá cuando quieras!`
+    : `Hola ${fullName}, ¿cómo estás? Te escribimos de Rouge para avisarte que ya llegó tu producto: *${prodList}*. ¡Pasá cuando quieras!`);
   const waLink = `https://wa.me/549${encodeURIComponent(String(phone).replace(/\D/g, ''))}?text=${waMsg}`;
 
   // Si tiene múltiples productos y no llegó aún, mostrar botón por producto
